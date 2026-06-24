@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ProtoFact.Abstractions\ProtoFact.Abstractions.csproj" />
     <ProjectReference Include="..\ProtoFact.Domain\ProtoFact.Domain.csproj" />
   </ItemGroup>
 

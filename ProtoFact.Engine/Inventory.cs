@@ -30,9 +30,7 @@ namespace ProtoFact.Engine
 
         public bool CanConsume(IEnumerable<Quantity> required)
         {
-            var grouped = required
-                          .GroupBy(q => q.Item)
-                          .Select(g => new Quantity(g.Key, g.Sum(x => x.Amount)));
+            var grouped = NormalizeInputs(required);
 
             foreach (var qty in grouped)
             {
@@ -47,9 +45,7 @@ namespace ProtoFact.Engine
 
         public bool TryConsume(IEnumerable<Quantity> required)
         {
-            var grouped = required
-                          .GroupBy(q => q.Item)
-                          .Select(g => new Quantity(g.Key, g.Sum(x => x.Amount)));
+            var grouped = NormalizeInputs(required);
 
             if (!CanConsume(grouped))
                 return false;
@@ -61,6 +57,13 @@ namespace ProtoFact.Engine
             }
 
             return true;
+        }
+
+        private static IEnumerable<Quantity> NormalizeInputs(IEnumerable<Quantity> required)
+        {
+            return required
+                   .GroupBy(q => q.Item)
+                   .Select(g => new Quantity(g.Key, g.Sum(x => x.Amount)));
         }
     }
 }

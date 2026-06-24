@@ -3,6 +3,7 @@ using ProtoFact.Domain;
 using ProtoFact.Engine;
 using ProtoFact.Tests.Fakes;
 using Xunit;
+using EngineRunner = ProtoFact.Engine.Engine;
 
 namespace ProtoFact.Tests
 {
@@ -25,7 +26,7 @@ namespace ProtoFact.Tests
 
             var time = new FakeTimeProvider { DeltaTime = 1.0 };
 
-            var engine = new Engine.Engine(new List<IProcessor> { processor }, time);
+            var engine = new EngineRunner(new List<IProcessor> { processor }, time);
 
             engine.Tick();
 
@@ -37,7 +38,7 @@ namespace ProtoFact.Tests
         {
             var time = new FakeTimeProvider { DeltaTime = 0 };
 
-            var engine = new Engine.Engine(new List<IProcessor>(), time);
+            var engine = new EngineRunner(new List<IProcessor>(), time);
 
             engine.Tick();
 

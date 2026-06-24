@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="ProtoFact.Abstractions/ProtoFact.Abstractions.csproj" Id="cfef7753-6306-4b83-b6ab-b1014bf4c200" />
+  <Project Path="ProtoFact.Domain/ProtoFact.Domain.csproj" />
+  <Project Path="ProtoFact.Engine/ProtoFact.Engine.csproj" Id="78bdbf40-191c-4622-8142-c438cb8464c1" />
+  <Project Path="ProtoFact.Infrastructure/ProtoFact.Infrastructure.csproj" Id="9c8a26ee-eb38-4ee7-a372-13872382dd61" />
+  <Project Path="ProtoFact.Tests/ProtoFact.Tests.csproj" />
+</Solution>

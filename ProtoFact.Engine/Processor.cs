@@ -11,8 +11,12 @@ namespace ProtoFact.Engine
         private readonly IInventory _inventory;
 
         public Recipe Recipe { get; }
+
         public ProcessorState State { get; private set; }
+
         public double Progress { get; private set; }
+
+        public string Name { get; }
 
         public Processor(Recipe recipe, IInventory inventory)
         {

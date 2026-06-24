@@ -43,5 +43,21 @@ namespace ProtoFact.Tests
 
             Assert.True(result.IsValid);
         }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public void Recipe_Should_Throw_When_Invalid_Duration(double duration)
+        {
+            var item = new Item("x", "X", ItemType.Intermediate);
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+            {
+                new Recipe(
+                           new[] { new Quantity(item, 1) },
+                           new Quantity(item, 1),
+                           duration);
+            });
+        }
     }
 }

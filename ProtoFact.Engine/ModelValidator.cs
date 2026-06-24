@@ -5,8 +5,14 @@ using ProtoFact.Domain;
 
 namespace ProtoFact.Engine
 {
+    /// <summary>
+    /// Validates recipe definitions, ensuring structural correctness and absence of cycles.
+    /// </summary>
     public class ModelValidator : IModelValidator
     {
+        /// <summary>
+        /// Validates the provided recipes.
+        /// </summary>
         public ValidationResult Validate(IEnumerable<Recipe> recipes)
         {
             var result = new ValidationResult();
@@ -28,9 +34,6 @@ namespace ProtoFact.Engine
 
                 if (recipe.Inputs == null || !recipe.Inputs.Any())
                     result.AddError($"Recipe '{recipe}' has no inputs.");
-
-                if (recipe.DurationSeconds <= 0)
-                    result.AddError($"Recipe '{recipe}' has invalid duration.");
             }
         }
 
@@ -41,12 +44,20 @@ namespace ProtoFact.Engine
             var visited = new HashSet<Item>();
             var stack = new HashSet<Item>();
 
+            bool cycleDetected = false;
+
             foreach (var node in graph.Keys)
             {
                 if (DetectCycle(node, graph, visited, stack))
                 {
-                    result.AddError($"Cycle detected involving item '{node.Id}'");
+                    cycleDetected = true;
+                    break;
                 }
+            }
+
+            if (cycleDetected)
+            {
+                result.AddError("Cycle detected in recipe graph.");
             }
         }
 

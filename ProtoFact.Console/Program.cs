@@ -29,8 +29,9 @@ class Program
         inventory.Add(new[] { new Quantity(ore, 10) });
 
         var processor = new Processor(recipe, inventory, logger);
+        var processor2= new Processor(recipe, inventory, logger);
 
-        var processors = new[] { processor };
+        var processors = new[] { processor, processor2 };
 
         var time = new RealTimeProvider();
         var engine = new EngineRunner(processors, time);

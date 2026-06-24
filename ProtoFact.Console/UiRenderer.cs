@@ -25,7 +25,7 @@ namespace ProtoFact.Console
             var table = new Table()
                         .Border(TableBorder.Rounded)
                         .AddColumn("[yellow]Metric[/]")
-                        .AddColumn("[white]Value[/]");
+                        .AddColumn("[white]Value[/]", c => c.Width = 8);
 
             // Processors
             foreach (var processor in _processors)

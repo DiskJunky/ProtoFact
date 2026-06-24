@@ -56,6 +56,7 @@ namespace ProtoFact.Engine
         private void Run(double deltaTime)
         {
             Progress += deltaTime / Recipe.DurationSeconds;
+            Progress = Math.Min(Progress, 1.0);
 
             if (MathUtil.GreaterOrEqual(Progress, 1.0))
             {

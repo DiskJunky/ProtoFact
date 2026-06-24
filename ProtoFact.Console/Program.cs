@@ -45,6 +45,9 @@ class Program
                    {
                        while (true)
                        {
+                           if (System.Console.KeyAvailable && System.Console.ReadKey(true).Key == ConsoleKey.Q)
+                               break;
+
                            engine.Tick();
 
                            ctx.UpdateTarget(renderer.Render(trackedItems));

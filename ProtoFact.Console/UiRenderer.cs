@@ -35,9 +35,11 @@ namespace ProtoFact.Console
                              $"{processor.Recipe.Output.Item.Name}"
                             );
 
+                var stateColor = processor.State == ProcessorState.Running ? "green" : "red";
+
                 table.AddRow(
                              "State",
-                             processor.State.ToString()
+                             $"[{stateColor}]{processor.State}[/]"
                             );
 
                 table.AddRow(

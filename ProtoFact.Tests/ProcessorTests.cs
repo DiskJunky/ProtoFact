@@ -1,5 +1,6 @@
 ﻿using ProtoFact.Domain;
 using ProtoFact.Engine;
+using ProtoFact.Tests.Fakes;
 using Xunit;
 
 namespace ProtoFact.Tests
@@ -22,7 +23,9 @@ namespace ProtoFact.Tests
         public void Should_Not_Start_Without_Resources()
         {
             var inv = new Inventory();
-            var proc = new Processor(CreateRecipe(), inv);
+            var logger = new FakeLogger();
+            var proc = new Processor(CreateRecipe(), inv, logger);
+
 
             proc.Tick(1);
 
@@ -35,7 +38,8 @@ namespace ProtoFact.Tests
             var inv = new Inventory();
             inv.Add(new[] { new Quantity(_ore, 2) });
 
-            var proc = new Processor(CreateRecipe(), inv);
+            var logger = new FakeLogger();
+            var proc = new Processor(CreateRecipe(), inv, logger);
 
             proc.Tick(0.1);
 
@@ -48,7 +52,8 @@ namespace ProtoFact.Tests
             var inv = new Inventory();
             inv.Add(new[] { new Quantity(_ore, 2) });
 
-            var proc = new Processor(CreateRecipe(), inv);
+            var logger = new FakeLogger();
+            var proc = new Processor(CreateRecipe(), inv, logger);
 
             proc.Tick(0.1);
 
@@ -61,7 +66,8 @@ namespace ProtoFact.Tests
             var inv = new Inventory();
             inv.Add(new[] { new Quantity(_ore, 2) });
 
-            var proc = new Processor(CreateRecipe(), inv);
+            var logger = new FakeLogger();
+            var proc = new Processor(CreateRecipe(), inv, logger);
 
             proc.Tick(0.1); // start
             proc.Tick(1.0);
@@ -75,7 +81,8 @@ namespace ProtoFact.Tests
             var inv = new Inventory();
             inv.Add(new[] { new Quantity(_ore, 2) });
 
-            var proc = new Processor(CreateRecipe(), inv);
+            var logger = new FakeLogger();
+            var proc = new Processor(CreateRecipe(), inv, logger);
 
             proc.Tick(0.1); // start
             proc.Tick(2.0); // finish
@@ -90,7 +97,8 @@ namespace ProtoFact.Tests
             var inv = new Inventory();
             inv.Add(new[] { new Quantity(_ore, 2) });
 
-            var proc = new Processor(CreateRecipe(), inv);
+            var logger = new FakeLogger();
+            var proc = new Processor(CreateRecipe(), inv, logger);
 
             proc.Tick(0.1); // start
             proc.Tick(0.5);

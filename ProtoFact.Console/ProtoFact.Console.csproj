@@ -11,10 +11,18 @@
     <ProjectReference Include="..\ProtoFact.Abstractions\ProtoFact.Abstractions.csproj" />
     <ProjectReference Include="..\ProtoFact.Domain\ProtoFact.Domain.csproj" />
     <ProjectReference Include="..\ProtoFact.Engine\ProtoFact.Engine.csproj" />
+    <ProjectReference Include="..\ProtoFact.Infrastructure\ProtoFact.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Ninject" Version="3.3.6" />
     <PackageReference Include="Spectre.Console" Version="0.57.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="nlog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

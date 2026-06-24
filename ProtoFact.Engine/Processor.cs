@@ -1,5 +1,6 @@
-﻿using System;
+﻿using ProtoFact.Abstractions;
 using ProtoFact.Domain;
+using System;
 
 namespace ProtoFact.Engine
 {
@@ -9,6 +10,8 @@ namespace ProtoFact.Engine
     public class Processor : IProcessor
     {
         private readonly IInventory _inventory;
+        private readonly ILogger _logger;
+
 
         public Recipe Recipe { get; }
 
@@ -18,10 +21,11 @@ namespace ProtoFact.Engine
 
         public string Name { get; }
 
-        public Processor(Recipe recipe, IInventory inventory)
+        public Processor(Recipe recipe, IInventory inventory, ILogger logger)
         {
             Recipe = recipe ?? throw new ArgumentNullException(nameof(recipe));
             _inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             State = ProcessorState.Idle;
             Progress = 0;
@@ -46,6 +50,7 @@ namespace ProtoFact.Engine
 
         private void TryStart()
         {
+            _logger.Trace($"Processor starting recipe: {Recipe}");
             if (_inventory.TryConsume(Recipe.Inputs))
             {
                 Progress = 0;
@@ -66,6 +71,7 @@ namespace ProtoFact.Engine
 
         private void Complete()
         {
+            _logger.Info($"Completed recipe: {Recipe.Output}");
             _inventory.Add(new[] { Recipe.Output });
 
             Progress = 0;

@@ -22,7 +22,8 @@ namespace ProtoFact.Tests
             var inventory = new Inventory();
             inventory.Add(new[] { new Quantity(item, 1) });
 
-            var processor = new Processor(recipe, inventory);
+            var logger = new FakeLogger();
+            var processor = new Processor(recipe, inventory, logger);
 
             var time = new FakeTimeProvider { DeltaTime = 1.0 };
 

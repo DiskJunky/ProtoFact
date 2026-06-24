@@ -1,7 +1,9 @@
-﻿using Spectre.Console;
+﻿using Ninject;
+using Spectre.Console;
 using ProtoFact.Domain;
 using ProtoFact.Engine;
 using ProtoFact.Abstractions;
+using ProtoFact.Infrastructure;
 
 using EngineRunner = ProtoFact.Engine.Engine;
 
@@ -11,41 +13,38 @@ class Program
 {
     static void Main()
     {
-        // Items (shared references — IMPORTANT)
+        var kernel = new StandardKernel(new BindingsModule());
+
+        var logger = kernel.Get<ILogger>();
+        var inventory = kernel.Get<IInventory>();
+
         var ore = new Item("ore", "Ore", ItemType.Raw);
         var plate = new Item("plate", "Plate", ItemType.Intermediate);
 
-        // Recipe
         var recipe = new Recipe(
                                 new[] { new Quantity(ore, 1) },
                                 new Quantity(plate, 1),
                                 1.0);
 
-        // Inventory
-        var inventory = new Inventory();
         inventory.Add(new[] { new Quantity(ore, 10) });
 
-        // Processor(s)
-        var processor = new Processor(recipe, inventory);
+        var processor = new Processor(recipe, inventory, logger);
 
-        // Time
+        var processors = new[] { processor };
+
         var time = new RealTimeProvider();
+        var engine = new EngineRunner(processors, time);
 
-        // Engine
-        var engine = new EngineRunner(new[] { processor }, time);
-
-        // UI
-        var renderer = new UiRenderer(inventory, new[] { processor });
-
+        var renderer = new UiRenderer(inventory, processors);
         var trackedItems = new[] { ore, plate };
 
-        // Live UI loop
         AnsiConsole.Live(renderer.Render(trackedItems))
                    .Start(ctx =>
                    {
                        while (true)
                        {
-                           if (System.Console.KeyAvailable && System.Console.ReadKey(true).Key == ConsoleKey.Q)
+                           if (System.Console.KeyAvailable &&
+                               System.Console.ReadKey(true).Key == System.ConsoleKey.Q)
                                break;
 
                            engine.Tick();

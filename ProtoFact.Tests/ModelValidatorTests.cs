@@ -53,8 +53,7 @@ namespace ProtoFact.Tests
 
             Assert.Throws<ArgumentOutOfRangeException>(() =>
             {
-                new Recipe(
-                           new[] { new Quantity(item, 1) },
+                new Recipe(new[] { new Quantity(item, 1) },
                            new Quantity(item, 1),
                            duration);
             });

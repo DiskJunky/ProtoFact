@@ -2,6 +2,7 @@
 using ProtoFact.Engine;
 using ProtoFact.Domain;
 using System.Collections.Generic;
+using ProtoFact.Abstractions;
 using Spectre.Console.Rendering;
 
 namespace ProtoFact.Console

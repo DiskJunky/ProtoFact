@@ -1,4 +1,4 @@
-﻿namespace ProtoFact.Engine
+﻿namespace ProtoFact.Abstractions
 {
     public enum ProcessorState
     {

@@ -1,6 +1,6 @@
 ﻿using ProtoFact.Domain;
 
-namespace ProtoFact.Engine
+namespace ProtoFact.Abstractions
 {
     public interface IProcessor
     {

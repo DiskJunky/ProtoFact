@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using ProtoFact.Abstractions;
 using ProtoFact.Domain;
 using ProtoFact.Engine;
 using ProtoFact.Tests.Fakes;

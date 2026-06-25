@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ProtoFact.Abstractions\ProtoFact.Abstractions.csproj" />
+    <ProjectReference Include="..\ProtoFact.Control\ProtoFact.Control.csproj" />
     <ProjectReference Include="..\ProtoFact.Domain\ProtoFact.Domain.csproj" />
     <ProjectReference Include="..\ProtoFact.Engine\ProtoFact.Engine.csproj" />
     <ProjectReference Include="..\ProtoFact.Infrastructure\ProtoFact.Infrastructure.csproj" />

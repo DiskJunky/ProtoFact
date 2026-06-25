@@ -14,6 +14,7 @@ namespace ProtoFact.Infrastructure
             // Core
             Bind<IInventory>().To<Inventory>().InSingletonScope();
             Bind<IEngine>().To<Engine.Engine>().InSingletonScope();
+            Bind<IRateSolver>().To<RateSolver>().InSingletonScope();
 
             // Logging
             Bind<ILogger>().To<NLogLogger>().InSingletonScope();

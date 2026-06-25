@@ -3,6 +3,7 @@ using Spectre.Console;
 using ProtoFact.Domain;
 using ProtoFact.Engine;
 using ProtoFact.Abstractions;
+using ProtoFact.Control;
 using ProtoFact.Infrastructure;
 
 using EngineRunner = ProtoFact.Engine.Engine;
@@ -20,24 +21,31 @@ class Program
 
         var ore = new Item("ore", "Ore", ItemType.Raw);
         var plate = new Item("plate", "Plate", ItemType.Intermediate);
+        var gear = new Item("gear", "Gear", ItemType.Intermediate);
 
         var recipe = new Recipe(
                                 new[] { new Quantity(ore, 1) },
                                 new Quantity(plate, 1),
                                 1.0);
+        var gearRecipe = new Recipe(
+                                    new[] { new Quantity(plate, 2) },
+                                    new Quantity(gear, 1),
+                                    1.0);
+        var recipes = new[] { recipe, gearRecipe };
 
         inventory.Add(new[] { new Quantity(ore, 10) });
 
-        var processor = new Processor(recipe, inventory, logger);
-        var processor2= new Processor(recipe, inventory, logger);
+        var rateSolver = kernel.Get<IRateSolver>();
+        var controller = new ProductionController(rateSolver, inventory, logger);
 
-        var processors = new[] { processor, processor2 };
+        // Example goal
+        controller.AddGoal(new ProductionGoal(gear, 1.0));
 
         var time = new RealTimeProvider();
-        var engine = new EngineRunner(processors, time);
+        var engine = new EngineRunner(controller.Processors, time);
 
-        var renderer = new UiRenderer(inventory, processors);
-        var trackedItems = new[] { ore, plate };
+        var renderer = new UiRenderer(inventory, controller.Processors);
+        var trackedItems = new[] { ore, plate, gear };
 
         AnsiConsole.Live(renderer.Render(trackedItems))
                    .Start(ctx =>
@@ -48,6 +56,7 @@ class Program
                                System.Console.ReadKey(true).Key == System.ConsoleKey.Q)
                                break;
 
+                           controller.Tick(recipes);
                            engine.Tick();
 
                            ctx.UpdateTarget(renderer.Render(trackedItems));

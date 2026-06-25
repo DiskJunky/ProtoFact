@@ -9,10 +9,10 @@ namespace ProtoFact.Engine
     /// </summary>
     public class Engine : IEngine
     {
-        private readonly IEnumerable<IProcessor> _processors;
+        private readonly IList<IProcessor> _processors;
         private readonly ITimeProvider _timeProvider;
 
-        public Engine(IEnumerable<IProcessor> processors, ITimeProvider timeProvider)
+        public Engine(IList<IProcessor> processors, ITimeProvider timeProvider)
         {
             _processors = processors ?? throw new ArgumentNullException(nameof(processors));
             _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));

@@ -11,13 +11,15 @@ namespace ProtoFact.Control
     /// </summary>
     public class ProductionController : IProductionController
     {
+        private const double BufferThreshold = 5.0;
+
         private readonly IRateSolver _rateSolver;
         private readonly IInventory _inventory;
         private readonly ILogger _logger;
 
         private readonly List<IProcessor> _processors = new();
         private readonly List<ProductionGoal> _goals = new();
-        private readonly Dictionary<Item, double> _lastAppliedGoalRates = new();
+        //private readonly Dictionary<Item, double> _lastAppliedGoalRates = new();
 
         public IList<IProcessor> Processors => _processors;
 
@@ -39,25 +41,35 @@ namespace ProtoFact.Control
             _goals.Add(pg);
         }
 
+        private bool ShouldScaleUp(Item item)
+        {
+            var currentStock = _inventory.Get(item);
+
+            // ✅ Backpressure: don’t overproduce
+            if (currentStock > BufferThreshold)
+                return false;
+
+            return true;
+        }
+
+        private bool ShouldScaleDown(Item item)
+        {
+            var currentStock = _inventory.Get(item);
+
+            // If we have a large buffer, reduce production
+            return currentStock > (BufferThreshold * 2);
+        }
+
         public void Tick(IEnumerable<Recipe> recipes)
         {
             foreach (var goal in _goals)
             {
-                if (_lastAppliedGoalRates.TryGetValue(goal.Target, out var lastRate) &&
-                    Math.Abs(lastRate - goal.TargetRate) < 1e-6)
-                {
-                    // No change in goal → skip recomputing plan
-                    continue;
-                }
-
                 var plan = _rateSolver.SolveRate(
                                                  goal.Target,
                                                  goal.TargetRate,
                                                  recipes);
 
                 ApplyPlan(plan, recipes);
-
-                _lastAppliedGoalRates[goal.Target] = goal.TargetRate;
             }
         }
 
@@ -83,6 +95,12 @@ namespace ProtoFact.Control
 
             if (requiredCount > currentCount)
             {
+                if (!ShouldScaleUp(node.Item))
+                {
+                    _logger.Debug($"Backpressure: skipping scale-up for '{node.Item.Name}'");
+                    return;
+                }
+
                 var recipe = recipes.FirstOrDefault(r => r.Output.Item.Equals(node.Item));
                 if (recipe == null)
                     return;
@@ -105,12 +123,32 @@ namespace ProtoFact.Control
             }
             else if (requiredCount < currentCount)
             {
-                var toRemove = currentCount - requiredCount;
+                var recipe = recipes.FirstOrDefault(r => r.Output.Item.Equals(node.Item));
+                if (recipe == null)
+                    return;
+
+                // ✅ Never aggressively scale down source generators
+                if (IsSourceRecipe(recipe))
+                    return;
+
+                var targetCount = requiredCount;
+
+                if (ShouldScaleDown(node.Item))
+                {
+                    targetCount = Math.Max(requiredCount - 1, 0);
+                }
+
+                var toRemove = currentCount - targetCount;
 
                 RemoveProcessors(node.Item, toRemove);
 
-                _logger.Debug($"Scaled DOWN '{node.Item.Name}' to {requiredCount} processors.");
+                _logger.Debug($"Scaled DOWN '{node.Item.Name}' to {targetCount} processors.");
             }
+        }
+
+        private bool IsSourceRecipe(Recipe recipe)
+        {
+            return recipe.Inputs == null || recipe.Inputs.Count == 0;
         }
 
         private bool CanSustainProduction(Recipe recipe)

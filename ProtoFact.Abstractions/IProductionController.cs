@@ -9,6 +9,10 @@ namespace ProtoFact.Abstractions
 
         void AddGoal(IProductionGoal goal);
 
+        IEnumerable<Item> GetBottlenecks();
+
+        double GetUtilization(Item item);
+
         void Tick(IEnumerable<Recipe> recipes);
     }
 }

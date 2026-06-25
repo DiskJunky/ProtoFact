@@ -14,51 +14,105 @@ namespace ProtoFact.Console
     {
         private readonly IInventory _inventory;
         private readonly IEnumerable<IProcessor> _processors;
+        private readonly IProductionController _controller;
 
-        public UiRenderer(IInventory inventory, IEnumerable<IProcessor> processors)
+        public UiRenderer(IInventory inventory, 
+                          IEnumerable<IProcessor> processors,
+                          IProductionController controller)
         {
             _inventory = inventory;
             _processors = processors;
+            _controller = controller;
         }
 
         public IRenderable Render(IReadOnlyList<Item> trackedItems)
         {
+            var grid = new Grid();
+            grid.AddColumn(new GridColumn().NoWrap()); // left
+            grid.AddColumn();                          // right
+
+            // LEFT: processors
+            var processorPanel = new Panel(BuildProcessorTable())
+                                 .Header("Processors")
+                                 .Border(BoxBorder.Rounded);
+
+            // RIGHT: system
+            var metricsPanel = new Panel(BuildMetricsTable(trackedItems))
+                               .Header("System")
+                               .Border(BoxBorder.Rounded);
+
+            grid.AddRow(processorPanel, metricsPanel);
+
+            return grid;
+        }
+        private Table BuildProcessorTable()
+        {
             var table = new Table()
-                        .Border(TableBorder.Rounded)
-                        .AddColumn("[yellow]Metric[/]")
-                        .AddColumn("[white]Value[/]", c => c.Width = 8);
+                        .Border(TableBorder.Simple)
+                        .AddColumn("Item")
+                        .AddColumn("State", c => c.Width = 8)
+                        .AddColumn("Progress");
 
-            // Processors
-            foreach (var processor in _processors)
+            foreach (var p in _processors)
             {
-                table.AddRow(
-                             "Processor",
-                             $"{processor.Recipe.Output.Item.Name}"
-                            );
-
-                var stateColor = processor.State == ProcessorState.Running ? "green" : "red";
+                var stateColor = p.State == ProcessorState.Running ? "green" : "red";
 
                 table.AddRow(
-                             "State",
-                             $"[{stateColor}]{processor.State}[/]"
+                             p.Recipe.Output.Item.Name,
+                             $"[{stateColor}]{p.State}[/]",
+                             $"{p.Progress:P0}"
                             );
-
-                table.AddRow(
-                             "Progress",
-                             $"{processor.Progress:P0}"
-                            );
-
-                table.AddEmptyRow();
             }
 
-            // Inventory
-            foreach (var item in trackedItems)
+            return table;
+        }
+
+        private Table BuildMetricsTable(IReadOnlyList<Item> items)
+        {
+            var table = new Table()
+                        .Border(TableBorder.Simple)
+                        .AddColumn("Metric")
+                        .AddColumn("Value", c => c.Width = 20);
+
+            // ---- Inventory
+            table.AddRow("[yellow]Inventory[/]", "");
+
+            foreach (var item in items)
             {
-                table.AddRow(
-                             item.Name,
-                             _inventory.Get(item).ToString("F2")
-                            );
+                table.AddRow(item.Name, _inventory.Get(item).ToString("F2"));
             }
+
+            table.AddEmptyRow();
+
+            // ---- Utilization
+            table.AddRow("[yellow]Utilization[/]", "");
+
+            foreach (var item in items)
+            {
+                var util = _controller.GetUtilization(item);
+                table.AddRow(item.Name, $"{util:P0}");
+            }
+
+            table.AddEmptyRow();
+
+            // ---- Process counts
+            table.AddRow("[yellow]Processors[/]", "");
+
+            foreach (var item in items)
+            {
+                var count = _processors.Count(p => p.Recipe.Output.Item.Equals(item));
+                table.AddRow(item.Name, count.ToString());
+            }
+
+            table.AddEmptyRow();
+
+            // ---- Bottlenecks
+            var bottlenecks = _controller.GetBottlenecks().Select(x => x.Name);
+
+            table.AddRow(
+                         "[yellow]Bottlenecks[/]",
+                         bottlenecks.Any() ? string.Join(", ", bottlenecks) : "None"
+                        );
 
             return table;
         }

@@ -31,7 +31,16 @@ class Program
                                     new[] { new Quantity(plate, 2) },
                                     new Quantity(gear, 1),
                                     1.0);
-        var recipes = new[] { recipe, gearRecipe };
+        var oreRecipe = new Recipe(
+                                   Array.Empty<Quantity>(),     // ✅ no inputs
+                                   new Quantity(ore, 1),        // produces ore
+                                   1.0);
+        var recipes = new[]
+                      {
+                          recipe, 
+                          gearRecipe,
+                          oreRecipe,
+                      };
 
         inventory.Add(new[] { new Quantity(ore, 10) });
 
@@ -44,7 +53,7 @@ class Program
         var time = new RealTimeProvider();
         var engine = new EngineRunner(controller.Processors, time);
 
-        var renderer = new UiRenderer(inventory, controller.Processors);
+        var renderer = new UiRenderer(inventory, controller.Processors, controller);
         var trackedItems = new[] { ore, plate, gear };
 
         AnsiConsole.Live(renderer.Render(trackedItems))

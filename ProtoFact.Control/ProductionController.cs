@@ -68,6 +68,16 @@ namespace ProtoFact.Control
             if (node.MachinesRequired <= 0)
                 return;
 
+            // ✅ STEP 1: Process inputs FIRST
+            if (node.Inputs != null && node.Inputs.Count > 0)
+            {
+                foreach (var input in node.Inputs)
+                {
+                    ApplyPlan(input, recipes);
+                }
+            }
+
+            // ✅ STEP 2: Now scale current node
             var currentCount = CountProcessors(node.Item);
             var requiredCount = (int)Math.Ceiling(node.MachinesRequired);
 
@@ -76,6 +86,13 @@ namespace ProtoFact.Control
                 var recipe = recipes.FirstOrDefault(r => r.Output.Item.Equals(node.Item));
                 if (recipe == null)
                     return;
+
+                // ✅ IMPORTANT: allow scaling if it's a source OR inputs exist OR upstream is planned
+                if (!CanSustainProduction(recipe))
+                {
+                    _logger.Debug($"Cannot scale '{node.Item.Name}' due to insufficient inputs.");
+                    return;
+                }
 
                 var toCreate = requiredCount - currentCount;
 
@@ -94,16 +111,20 @@ namespace ProtoFact.Control
 
                 _logger.Debug($"Scaled DOWN '{node.Item.Name}' to {requiredCount} processors.");
             }
+        }
 
-            // ✅ ADD THIS BLOCK BACK (this is what you're missing)
+        private bool CanSustainProduction(Recipe recipe)
+        {
+            // ✅ Always allow source recipes
+            if (recipe.Inputs == null || recipe.Inputs.Count == 0)
+                return true;
 
-            if (node.Inputs == null || node.Inputs.Count == 0)
-                return;
+            // ✅ Allow if currently possible
+            if (_inventory.CanConsume(recipe.Inputs))
+                return true;
 
-            foreach (var input in node.Inputs)
-            {
-                ApplyPlan(input, recipes);
-            }
+            // ✅ Otherwise: allow anyway (pipeline will fill)
+            return true;
         }
 
         private void RemoveProcessors(Item item, int count)
@@ -121,6 +142,34 @@ namespace ProtoFact.Control
             }
         }
 
+        public double GetUtilization(Item item)
+        {
+            var processors = _processors
+                             .Where(p => p.Recipe.Output.Item.Equals(item))
+                             .ToList();
+
+            if (processors.Count == 0)
+                return 0;
+
+            var running = processors.Count(p => p.IsRunning);
+
+            return (double)running / processors.Count;
+        }
+
+        public IEnumerable<Item> GetBottlenecks()
+        {
+            foreach (var group in _processors.GroupBy(p => p.Recipe.Output.Item))
+            {
+                var total = group.Count();
+                var running = group.Count(p => p.IsRunning);
+
+                if (total > 0 && running < total)
+                {
+                    yield return group.Key;
+                }
+            }
+        }
+        
         private int CountProcessors(Item item)
         {
             return _processors.Count(p => p.Recipe.Output.Item.Equals(item));

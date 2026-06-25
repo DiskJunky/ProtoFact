@@ -10,6 +10,8 @@ namespace ProtoFact.Abstractions
         
         double Progress { get; }
 
+        bool IsRunning { get; }
+
         void Tick(double deltaTime);
     }
 }

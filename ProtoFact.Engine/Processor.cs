@@ -19,6 +19,8 @@ namespace ProtoFact.Engine
 
         public double Progress { get; private set; }
 
+        public bool IsRunning => State == ProcessorState.Running;
+
         public string Name { get; }
 
         public Processor(Recipe recipe, IInventory inventory, ILogger logger)

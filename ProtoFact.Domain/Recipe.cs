@@ -18,9 +18,6 @@ namespace ProtoFact.Domain
         {
             Inputs = inputs?.ToList() ?? throw new ArgumentNullException(nameof(inputs));
 
-            //if (!Inputs.Any())
-            //    throw new ArgumentException("Recipe must have at least one input.");
-
             Output = output ?? throw new ArgumentNullException(nameof(output));
 
             if (durationSeconds <= 0)

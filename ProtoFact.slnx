@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/docs/" />
   <Folder Name="/docs/images/">
+    <File Path="docs/images/console-sample.gif" />
     <File Path="docs/images/console-sample.png" />
   </Folder>
   <Folder Name="/Solution Items/">
@@ -10,7 +11,9 @@
   </Folder>
   <Project Path="ProtoFact.Abstractions/ProtoFact.Abstractions.csproj" Id="cfef7753-6306-4b83-b6ab-b1014bf4c200" />
   <Project Path="ProtoFact.Console/ProtoFact.Console.csproj" Id="aa0c5a6f-972f-4315-9d2c-af39a285e7b3" />
-  <Project Path="ProtoFact.Control/ProtoFact.Control.csproj" Id="0623fd4b-5bf4-4323-a212-06c306474434" />
+  <Project Path="ProtoFact.Control/ProtoFact.Control.csproj" Id="0623fd4b-5bf4-4323-a212-06c306474434">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
   <Project Path="ProtoFact.Domain/ProtoFact.Domain.csproj" />
   <Project Path="ProtoFact.Engine/ProtoFact.Engine.csproj" Id="78bdbf40-191c-4622-8142-c438cb8464c1" />
   <Project Path="ProtoFact.Infrastructure/ProtoFact.Infrastructure.csproj" Id="9c8a26ee-eb38-4ee7-a372-13872382dd61" />

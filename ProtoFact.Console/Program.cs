@@ -28,15 +28,15 @@ class Program
         var recipe = new Recipe(
                                 new[] { new Quantity(ore, 1) },
                                 new Quantity(plate, 1),
-                                1.0);
+                                2.0);
         var gearRecipe = new Recipe(
                                     new[] { new Quantity(plate, 2) },
                                     new Quantity(gear, 1),
-                                    1.0);
+                                    2.0);
         var oreRecipe = new Recipe(
                                    Array.Empty<Quantity>(),     // ✅ no inputs
                                    new Quantity(ore, 1),        // produces ore
-                                   1.0);
+                                   2.0);
         var recipes = new[]
                       {
                           recipe, 
@@ -55,13 +55,15 @@ class Program
 
         // Example goal
         controller.AddGoal(new ProductionGoal(gear, 1.0));
-        controller.AddGoal(new ProductionGoal(plate, 1.0));
+        controller.AddGoal(new ProductionGoal(plate, 2.0));
 
         var time = new RealTimeProvider();
         var engine = new EngineRunner(controller.Processors, time);
 
         var renderer = new UiRenderer(inventory, controller.Processors, controller);
         var trackedItems = new[] { ore, plate, gear };
+
+        //_ = System.Console.ReadKey(true); // Wait for a key press before starting the simulation
 
         AnsiConsole.Live(renderer.Render(trackedItems))
                    .Start(ctx =>

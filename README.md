@@ -1,4 +1,4 @@
 # ProtoFact
 Semi-automatic factory simulater
 
-![console-sample.png](./docs/images/console-sample.png)
+![console-sample.png](./docs/images/console-sample.gif)

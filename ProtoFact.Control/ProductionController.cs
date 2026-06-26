@@ -46,6 +46,8 @@ namespace ProtoFact.Control
 
         public void Tick(IEnumerable<Recipe> recipes)
         {
+            var plans = new List<ProductionNode>();
+
             foreach (var goal in _goals)
             {
                 var plan = _rateSolver.SolveRate(
@@ -53,8 +55,14 @@ namespace ProtoFact.Control
                                                  goal.TargetRate,
                                                  recipes);
 
-                ApplyPlan(plan, recipes);
+                plans.Add(plan);
             }
+
+            // ✅ Merge all plans into one
+            var mergedPlan = MergePlans(plans);
+
+            // ✅ Apply once
+            ApplyPlan(mergedPlan, recipes);
         }
 
         private void ApplyPlan(
@@ -138,6 +146,68 @@ namespace ProtoFact.Control
 
             // 🔧 Apply scaling
             ApplyAdjustment(node.Item, adjustment, recipe);
+        }
+
+        private ProductionNode MergePlans(List<ProductionNode> plans)
+        {
+            var rootMap = new Dictionary<Item, ProductionNode>();
+
+            foreach (var plan in plans)
+            {
+                MergeNode(rootMap, plan);
+            }
+
+            // If only one root, return it directly
+            if (rootMap.Count == 1)
+                return rootMap.Values.First();
+
+            // Otherwise create a synthetic root
+            return new ProductionNode
+                   {
+                       Item = new Item("root", "Root", ItemType.Intermediate),
+                       RequiredRate = rootMap.Values.Sum(n => n.RequiredRate),
+                       MachinesRequired = rootMap.Values.Sum(n => n.MachinesRequired),
+                       Inputs = rootMap.Values.ToList()
+                   };
+        }
+
+        private void MergeNode(
+            Dictionary<Item, ProductionNode> map,
+            ProductionNode incoming)
+        {
+            if (!map.TryGetValue(incoming.Item, out var existing))
+            {
+                existing = new ProductionNode
+                           {
+                               Item = incoming.Item,
+                               RequiredRate = incoming.RequiredRate,
+                               MachinesRequired = incoming.MachinesRequired,
+                               Inputs = new List<ProductionNode>()
+                           };
+
+                map[incoming.Item] = existing;
+            }
+            else
+            {
+                // ✅ Merge values
+                existing.RequiredRate += incoming.RequiredRate;
+                existing.MachinesRequired += incoming.MachinesRequired;
+            }
+
+            // ✅ Merge children properly (THIS is the key fix)
+            if (incoming.Inputs != null && incoming.Inputs.Count > 0)
+            {
+                // Build lookup from existing children
+                var childMap = existing.Inputs.ToDictionary(n => n.Item);
+
+                foreach (var child in incoming.Inputs)
+                {
+                    MergeNode(childMap, child);
+                }
+
+                // ✅ Rebuild Inputs list from merged results
+                existing.Inputs = childMap.Values.ToList();
+            }
         }
 
         private void ApplyAdjustment(Item item, double adjustment, Recipe recipe)

@@ -55,6 +55,7 @@ class Program
 
         // Example goal
         controller.AddGoal(new ProductionGoal(gear, 1.0));
+        controller.AddGoal(new ProductionGoal(plate, 1.0));
 
         var time = new RealTimeProvider();
         var engine = new EngineRunner(controller.Processors, time);

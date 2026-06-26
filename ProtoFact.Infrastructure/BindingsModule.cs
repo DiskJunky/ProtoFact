@@ -15,6 +15,8 @@ namespace ProtoFact.Infrastructure
             Bind<IInventory>().To<Inventory>().InSingletonScope();
             Bind<IEngine>().To<Engine.Engine>().InSingletonScope();
             Bind<IRateSolver>().To<RateSolver>().InSingletonScope();
+            Bind<IAdaptiveController>().To<ProportionalController>().InSingletonScope();
+            Bind<IBufferStrategy>().To<TimeWindowBufferStrategy>().InSingletonScope();
 
             // Logging
             Bind<ILogger>().To<NLogLogger>().InSingletonScope();

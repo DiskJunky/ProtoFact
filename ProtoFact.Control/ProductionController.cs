@@ -11,24 +11,27 @@ namespace ProtoFact.Control
     /// </summary>
     public class ProductionController : IProductionController
     {
-        private const double BufferThreshold = 5.0;
-
         private readonly IRateSolver _rateSolver;
         private readonly IInventory _inventory;
         private readonly ILogger _logger;
 
         private readonly List<IProcessor> _processors = new();
         private readonly List<ProductionGoal> _goals = new();
-        //private readonly Dictionary<Item, double> _lastAppliedGoalRates = new();
+        private readonly IAdaptiveController _adaptiveController;
+        private readonly IBufferStrategy _bufferStrategy;
 
         public IList<IProcessor> Processors => _processors;
 
         public ProductionController(
             IRateSolver rateSolver,
+            IAdaptiveController adaptiveController,
+            IBufferStrategy bufferStrategy,
             IInventory inventory,
             ILogger logger)
         {
             _rateSolver = rateSolver ?? throw new ArgumentNullException(nameof(rateSolver));
+            _adaptiveController = adaptiveController ?? throw new ArgumentNullException(nameof(adaptiveController));
+            _bufferStrategy = bufferStrategy ?? throw new ArgumentNullException(nameof(bufferStrategy));
             _inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -39,25 +42,6 @@ namespace ProtoFact.Control
                 throw new ArgumentException("Invalid goal type.");
 
             _goals.Add(pg);
-        }
-
-        private bool ShouldScaleUp(Item item)
-        {
-            var currentStock = _inventory.Get(item);
-
-            // ✅ Backpressure: don’t overproduce
-            if (currentStock > BufferThreshold)
-                return false;
-
-            return true;
-        }
-
-        private bool ShouldScaleDown(Item item)
-        {
-            var currentStock = _inventory.Get(item);
-
-            // If we have a large buffer, reduce production
-            return currentStock > (BufferThreshold * 2);
         }
 
         public void Tick(IEnumerable<Recipe> recipes)
@@ -80,7 +64,7 @@ namespace ProtoFact.Control
             if (node.MachinesRequired <= 0)
                 return;
 
-            // ✅ STEP 1: Process inputs FIRST
+            // ✅ STEP 1: Process inputs FIRST (unchanged)
             if (node.Inputs != null && node.Inputs.Count > 0)
             {
                 foreach (var input in node.Inputs)
@@ -90,59 +74,99 @@ namespace ProtoFact.Control
             }
 
             // ✅ STEP 2: Now scale current node
+            var recipe = recipes.FirstOrDefault(r => r.Output.Item.Equals(node.Item));
+            if (recipe == null)
+                return;
+
+            var currentStock = _inventory.Get(node.Item);
             var currentCount = CountProcessors(node.Item);
             var requiredCount = (int)Math.Ceiling(node.MachinesRequired);
 
-            if (requiredCount > currentCount)
+            // 🧠 Buffer target from rate
+            var targetBuffer = _bufferStrategy.GetTargetBuffer(node.Item, node.RequiredRate);
+
+            // 🧠 Solver anchor (steady-state target)
+            var baseDelta = requiredCount - currentCount;
+
+            // 🧠 Adaptive correction (feedback)
+            var cappedStock = Math.Min(currentStock, targetBuffer * 2);
+
+            var adaptiveDelta = _adaptiveController.ComputeAdjustment(
+                                                                      node.Item,
+                                                                      cappedStock,
+                                                                      targetBuffer);
+
+            // ✅ Combine feedforward + feedback
+            var adjustment = baseDelta + adaptiveDelta;
+
+            // 🛑 HARD SAFETY: limit change per tick (CRITICAL)
+            const int maxStepPerTick = 2;
+            adjustment = Math.Clamp(adjustment, -maxStepPerTick, maxStepPerTick);
+
+            // 🛑 Prevent runaway growth once at/above required count
+            if (adjustment > 0 && currentCount >= requiredCount)
             {
-                if (!ShouldScaleUp(node.Item))
+                adjustment = Math.Min(adjustment, 1);
+            }
+
+            // 🛑 Prevent invalid scale-up
+            if (adjustment > 0 && !CanSustainProduction(recipe))
+            {
+                _logger.Debug($"Cannot scale '{node.Item.Name}' due to insufficient inputs.");
+                return;
+            }
+
+            // 🛑 Protect source recipes from scale-down
+            // Allow minimal baseline for downstream producers
+            if (adjustment < 0)
+            {
+                var minProcessors = IsSourceRecipe(recipe) ? 1 : 1;
+
+                if (currentCount <= minProcessors)
                 {
-                    _logger.Debug($"Backpressure: skipping scale-up for '{node.Item.Name}'");
-                    return;
+                    return; // don't scale below baseline
                 }
+            }
 
-                var recipe = recipes.FirstOrDefault(r => r.Output.Item.Equals(node.Item));
-                if (recipe == null)
-                    return;
+            // 🔍 Improved observability (VERY useful now)
+            _logger.Debug(
+                $"[Adaptive] {node.Item.Name} | " +
+                $"Stock={currentStock:F2} Target={targetBuffer:F2} " +
+                $"Req={requiredCount} Curr={currentCount} " +
+                $"BaseΔ={baseDelta:F2} AdaptΔ={adaptiveDelta:F2} FinalΔ={adjustment:F2}"
+            );
 
-                // ✅ IMPORTANT: allow scaling if it's a source OR inputs exist OR upstream is planned
-                if (!CanSustainProduction(recipe))
-                {
-                    _logger.Debug($"Cannot scale '{node.Item.Name}' due to insufficient inputs.");
-                    return;
-                }
+            // 🔧 Apply scaling
+            ApplyAdjustment(node.Item, adjustment, recipe);
+        }
 
-                var toCreate = requiredCount - currentCount;
+        private void ApplyAdjustment(Item item, double adjustment, Recipe recipe)
+        {
+            const double discreteDeadband = 0.1;
 
-                for (int i = 0; i < toCreate; i++)
+            if (Math.Abs(adjustment) < discreteDeadband)
+                return;
+
+            var currentCount = CountProcessors(item);
+
+            if (adjustment > 0)
+            {
+                var toAdd = (int)Math.Floor(adjustment);
+
+                for (int i = 0; i < toAdd; i++)
                 {
                     _processors.Add(CreateProcessor(recipe));
                 }
 
-                _logger.Debug($"Scaled UP '{node.Item.Name}' to {requiredCount} processors.");
+                _logger.Debug($"Scaled UP '{item.Name}' by {toAdd} → {currentCount + toAdd}");
             }
-            else if (requiredCount < currentCount)
+            else
             {
-                var recipe = recipes.FirstOrDefault(r => r.Output.Item.Equals(node.Item));
-                if (recipe == null)
-                    return;
+                var toRemove = (int)Math.Floor(Math.Abs(adjustment));
 
-                // ✅ Never aggressively scale down source generators
-                if (IsSourceRecipe(recipe))
-                    return;
+                RemoveProcessors(item, toRemove);
 
-                var targetCount = requiredCount;
-
-                if (ShouldScaleDown(node.Item))
-                {
-                    targetCount = Math.Max(requiredCount - 1, 0);
-                }
-
-                var toRemove = currentCount - targetCount;
-
-                RemoveProcessors(node.Item, toRemove);
-
-                _logger.Debug($"Scaled DOWN '{node.Item.Name}' to {targetCount} processors.");
+                _logger.Debug($"Scaled DOWN '{item.Name}' by {toRemove} → {Math.Max(0, currentCount - toRemove)}");
             }
         }
 

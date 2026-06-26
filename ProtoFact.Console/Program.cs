@@ -18,6 +18,8 @@ class Program
 
         var logger = kernel.Get<ILogger>();
         var inventory = kernel.Get<IInventory>();
+        var adaptiveController = kernel.Get<IAdaptiveController>();
+        var bufferStrategy = kernel.Get<IBufferStrategy>();
 
         var ore = new Item("ore", "Ore", ItemType.Raw);
         var plate = new Item("plate", "Plate", ItemType.Intermediate);
@@ -45,7 +47,11 @@ class Program
         inventory.Add(new[] { new Quantity(ore, 10) });
 
         var rateSolver = kernel.Get<IRateSolver>();
-        var controller = new ProductionController(rateSolver, inventory, logger);
+        var controller = new ProductionController(rateSolver,
+                                                  adaptiveController, 
+                                                  bufferStrategy, 
+                                                  inventory, 
+                                                  logger);
 
         // Example goal
         controller.AddGoal(new ProductionGoal(gear, 1.0));

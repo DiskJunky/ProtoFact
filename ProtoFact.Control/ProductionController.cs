@@ -176,6 +176,38 @@ namespace ProtoFact.Control
             return recipe.Inputs == null || recipe.Inputs.Count == 0;
         }
 
+        public IEnumerable<BottleneckInfo> GetBottleneckInfo()
+        {
+            foreach (var group in _processors.GroupBy(p => p.Recipe.Output.Item))
+            {
+                var total = group.Count();
+                var running = group.Count(p => p.IsRunning);
+
+                if (total == 0)
+                    continue;
+
+                var utilization = (double)running / total;
+                var severity = 1.0 - utilization;
+
+                yield return new BottleneckInfo(
+                                                group.Key,
+                                                total,
+                                                running,
+                                                utilization,
+                                                severity
+                                               );
+            }
+        }
+
+        public IEnumerable<BottleneckInfo> GetTopBottlenecks(int topN = 3)
+        {
+            return GetBottleneckInfo()
+                   .Where(b => b.Severity > 0)
+                   .OrderByDescending(b => b.Severity)
+                   .Take(topN);
+        }
+
+
         private bool CanSustainProduction(Recipe recipe)
         {
             // ✅ Always allow source recipes

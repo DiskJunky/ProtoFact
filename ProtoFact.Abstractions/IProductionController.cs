@@ -14,5 +14,9 @@ namespace ProtoFact.Abstractions
         double GetUtilization(Item item);
 
         void Tick(IEnumerable<Recipe> recipes);
+
+        IEnumerable<BottleneckInfo> GetBottleneckInfo();
+
+        IEnumerable<BottleneckInfo> GetTopBottlenecks(int topN = 3);
     }
 }

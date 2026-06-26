@@ -107,11 +107,24 @@ namespace ProtoFact.Console
             table.AddEmptyRow();
 
             // ---- Bottlenecks
-            var bottlenecks = _controller.GetBottlenecks().Select(x => x.Name);
+            var bottlenecks = _controller.GetTopBottlenecks(3).ToList();
 
             table.AddRow(
                          "[yellow]Bottlenecks[/]",
-                         bottlenecks.Any() ? string.Join(", ", bottlenecks) : "None"
+                         bottlenecks.Any()
+                             ? string.Join(", ",
+                                           bottlenecks.Select(b =>
+                                           {
+                                               var color = b.Severity switch
+                                                           {
+                                                               > 0.7 => "red",
+                                                               > 0.3 => "yellow",
+                                                               _ => "green"
+                                                           };
+
+                                               return $"[{color}]{b.Item.Name} ({b.Severity:P0})[/]";
+                                           }))
+                             : "None"
                         );
 
             return table;

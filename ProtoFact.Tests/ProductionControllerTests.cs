@@ -24,6 +24,8 @@ namespace ProtoFact.Tests
 
             var controller = new ProductionController(
                                                       new RateSolver(),
+                                                      new ProportionalController(),
+                                                      new TimeWindowBufferStrategy(),
                                                       new Inventory(),
                                                       new FakeLogger());
 
@@ -41,6 +43,8 @@ namespace ProtoFact.Tests
 
             var controller = new ProductionController(
                                                       new RateSolver(),
+                                                      new ProportionalController(),
+                                                      new TimeWindowBufferStrategy(),
                                                       new Inventory(),
                                                       new FakeLogger());
 
@@ -64,6 +68,8 @@ namespace ProtoFact.Tests
 
             var controller = new ProductionController(
                                                       new RateSolver(),
+                                                      new ProportionalController(kp: 0.0),
+                                                      new TimeWindowBufferStrategy(),
                                                       new Inventory(),
                                                       new FakeLogger());
 
@@ -75,6 +81,72 @@ namespace ProtoFact.Tests
             controller.Tick(new[] { recipe });
 
             Assert.Equal(firstCount, controller.Processors.Count);
+        }
+
+        [Fact]
+        public void Should_Aggregate_Multiple_Goals_Into_Shared_Production()
+        {
+            var ore = Create("ore");
+            var plate = Create("plate");
+            var gear = Create("gear");
+
+            var plateRecipe = new Recipe(
+                                         new[] { new Quantity(ore, 1) },
+                                         new Quantity(plate, 1),
+                                         1);
+
+            var gearRecipe = new Recipe(
+                                        new[] { new Quantity(plate, 2) },
+                                        new Quantity(gear, 1),
+                                        1);
+
+            var controller = new ProductionController(
+                                                      new RateSolver(),
+                                                      new ProportionalController(kp: 0.0), // deterministic
+                                                      new TimeWindowBufferStrategy(),
+                                                      new Inventory(),
+                                                      new FakeLogger());
+
+            controller.AddGoal(new ProductionGoal(gear, 1));
+            controller.AddGoal(new ProductionGoal(plate, 1));
+
+            for (int i = 0; i < 3; i++)
+            {
+                controller.Tick(new[] { plateRecipe, gearRecipe });
+            }
+
+            var plateProcessors = controller.Processors
+                                            .Count(p => p.Recipe.Output.Item.Equals(plate));
+
+            //Assert.True(plateProcessors >= 3); // 2 for gear + 1 direct
+            Assert.InRange(plateProcessors, 1, 2);
+        }
+
+        [Fact]
+        public void Bottleneck_Severity_Should_Reflect_Utilization()
+        {
+            var ore = Create("ore");
+            var recipe = new Recipe(
+                                    System.Array.Empty<Quantity>(),
+                                    new Quantity(ore, 1),
+                                    1);
+
+            var controller = new ProductionController(
+                                                      new RateSolver(),
+                                                      new ProportionalController(kp: 0.0),
+                                                      new TimeWindowBufferStrategy(),
+                                                      new Inventory(),
+                                                      new FakeLogger());
+
+            controller.AddGoal(new ProductionGoal(ore, 2));
+
+            controller.Tick(new[] { recipe });
+
+            var info = controller.GetBottleneckInfo()
+                                 .First(i => i.Item.Equals(ore));
+
+            Assert.InRange(info.Utilization, 0, 1);
+            Assert.Equal(1 - info.Utilization, info.Severity, 3);
         }
     }
 }

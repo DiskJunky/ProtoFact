@@ -75,5 +75,36 @@ namespace ProtoFact.Tests
 
             Assert.Equal(rate, result.MachinesRequired);
         }
+
+        [Fact]
+        public void Should_Aggregate_Rates_For_Shared_Dependencies()
+        {
+            var ore = Create("ore");
+            var plate = Create("plate");
+            var gear = Create("gear");
+
+            var plateRecipe = new Recipe(
+                                         new[] { new Quantity(ore, 1) },
+                                         new Quantity(plate, 1),
+                                         1);
+
+            var gearRecipe = new Recipe(
+                                        new[] { new Quantity(plate, 2) },
+                                        new Quantity(gear, 1),
+                                        1);
+
+            var solver = new RateSolver();
+
+            // ⚠️ Two separate calls simulate multi-goal aggregation scenario
+            var gearPlan = solver.SolveRate(gear, 1, new[] { plateRecipe, gearRecipe });
+            var platePlan = solver.SolveRate(plate, 1, new[] { plateRecipe, gearRecipe });
+
+            // Extract plate nodes
+            var plateFromGear = gearPlan.Inputs[0];
+            var directPlate = platePlan;
+
+            Assert.Equal(2, plateFromGear.RequiredRate);
+            Assert.Equal(1, directPlate.RequiredRate);
+        }
     }
 }

@@ -22,5 +22,9 @@ namespace ProtoFact.Abstractions
         SystemMetrics GetSystemMetrics();
 
         double GetThroughput(Item item);
+
+        double GetMaxThroughput(Item item, IEnumerable<Recipe> recipes);
+
+        IEnumerable<IProductionGoal> GetGoals();
     }
 }

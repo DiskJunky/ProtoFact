@@ -78,7 +78,10 @@ class Program
         var time = new RealTimeProvider();
         var engine = new EngineRunner(controller.Processors, time);
 
-        var renderer = new UiRenderer(inventory, controller.Processors, controller);
+        var renderer = new UiRenderer(inventory, 
+                                      controller.Processors, 
+                                      controller, 
+                                      recipes);
         var trackedItems = new[] { ore, plate, gear };
 
         //_ = System.Console.ReadKey(true); // Wait for a key press before starting the simulation

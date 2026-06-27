@@ -46,15 +46,16 @@ namespace ProtoFact.Control
 
         public void Tick(IEnumerable<Recipe> recipes)
         {
+            var visited = new HashSet<Item>();
+
             foreach (var goal in _goals)
             {
                 var plan = _rateSolver.SolveRate(
                                                  goal.Target,
                                                  goal.TargetRate,
                                                  recipes);
-
-                // ✅ With DAG, no merge needed
-                ApplyPlan(plan, recipes);
+                
+                ApplyPlanInternal(plan, recipes, visited);
             }
         }
 
@@ -98,7 +99,12 @@ namespace ProtoFact.Control
 
             var targetBuffer = _bufferStrategy.GetTargetBuffer(node.Item, node.RequiredRate);
 
+            var deficit = targetBuffer - currentStock;
+            var hasDeficit = deficit > 0;
+
             var baseDelta = requiredCount - currentCount;
+            // ✅ HARD FLOOR: never go below required processors
+            var minDelta = requiredCount - currentCount;
 
             var cappedStock = Math.Min(currentStock, targetBuffer * 2);
 
@@ -107,7 +113,29 @@ namespace ProtoFact.Control
                 cappedStock,
                 targetBuffer);
 
-            var adjustment = baseDelta + adaptiveDelta;
+            var adaptive = baseDelta + adaptiveDelta;
+
+            // ✅ enforce minimum required processors
+            var adjustment = Math.Max(minDelta, adaptive);
+
+            // ✅ Prevent unnecessary growth above required capacity
+            if (adjustment > 0 && currentCount >= requiredCount)
+            {
+                if (hasDeficit)
+                {
+                    // Allow controlled overscaling to recover buffer
+                    var extraNeeded = (int)Math.Ceiling(deficit / Math.Max(1.0, node.RequiredRate));
+                    var maxAllowed = requiredCount + extraNeeded;
+
+                    var allowedIncrease = maxAllowed - currentCount;
+                    adjustment = Math.Min(adjustment, allowedIncrease);
+                }
+                else
+                {
+                    // No deficit → no scaling above required
+                    adjustment = 0;
+                }
+            }
 
             const int maxStepPerTick = 2;
             adjustment = Math.Clamp(adjustment, -maxStepPerTick, maxStepPerTick);
@@ -123,18 +151,16 @@ namespace ProtoFact.Control
                 return;
             }
 
-            if (adjustment < 0)
+            if (adjustment < 0 && currentCount + adjustment < requiredCount)
             {
-                var minProcessors = 1;
-
-                if (currentCount <= minProcessors)
-                    return;
+                // ❌ Prevent dropping below required production
+                return;
             }
 
             _logger.Debug(
                 $"[Adaptive] {node.Item.Name} | " +
                 $"Stock={currentStock:F2} Target={targetBuffer:F2} " +
-                $"Req={requiredCount} Curr={currentCount} " +
+                $"Req={requiredCount} Curr={currentCount} MinΔ={minDelta:F2} " +
                 $"BaseΔ={baseDelta:F2} AdaptΔ={adaptiveDelta:F2} FinalΔ={adjustment:F2}"
             );
 
@@ -317,5 +343,64 @@ namespace ProtoFact.Control
 
             return total;
         }
+
+        public double GetMaxThroughput(Item item, IEnumerable<Recipe> recipes)
+        {
+            var recipeMap = recipes.ToDictionary(r => r.Output.Item);
+
+            return ComputeMaxThroughput(item, recipeMap);
+        }
+
+        private double ComputeMaxThroughput(
+            Item item,
+            Dictionary<Item, Recipe> recipeMap)
+        {
+            // ✅ If no processors produce this item → zero capacity
+            var processors = _processors
+                             .Where(p => p.Recipe.Output.Item.Equals(item))
+                             .ToList();
+
+            if (processors.Count == 0)
+                return 0;
+
+            // ✅ Local capacity (sum of all processors)
+            double localCapacity = processors.Sum(p =>
+                                                      p.Recipe.Output.Amount / p.Recipe.DurationSeconds);
+
+            // ✅ If no recipe → raw source
+            if (!recipeMap.TryGetValue(item, out var recipe) ||
+                recipe.Inputs.Count == 0)
+            {
+                return localCapacity;
+            }
+
+            // ✅ Compute upstream constraints
+            double upstreamLimit = double.MaxValue;
+
+            foreach (var input in recipe.Inputs)
+            {
+                var inputCapacity = ComputeMaxThroughput(input.Item, recipeMap);
+
+                // Required input per output unit
+                double ratio = input.Amount / recipe.Output.Amount;
+
+                if (ratio <= 0)
+                    continue;
+
+                // Limit imposed by this input
+                double constraint = inputCapacity / ratio;
+
+                upstreamLimit = Math.Min(upstreamLimit, constraint);
+            }
+
+            // ✅ Final limit = lowest constraint
+            return Math.Min(localCapacity, upstreamLimit);
+        }
+
+        public IEnumerable<IProductionGoal> GetGoals()
+        {
+            return _goals;
+        }
+
     }
 }

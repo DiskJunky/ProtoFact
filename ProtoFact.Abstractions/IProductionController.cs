@@ -18,5 +18,9 @@ namespace ProtoFact.Abstractions
         IEnumerable<BottleneckInfo> GetBottleneckInfo();
 
         IEnumerable<BottleneckInfo> GetTopBottlenecks(int topN = 3);
+
+        SystemMetrics GetSystemMetrics();
+
+        double GetThroughput(Item item);
     }
 }

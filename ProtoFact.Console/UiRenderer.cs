@@ -31,17 +31,17 @@ namespace ProtoFact.Console
             grid.AddColumn(new GridColumn().NoWrap()); // left
             grid.AddColumn();                          // right
 
-            // LEFT: processors
-            var processorPanel = new Panel(BuildProcessorTable())
-                                 .Header("Processors")
-                                 .Border(BoxBorder.Rounded);
-
-            // RIGHT: system
+            // LEFT: system
             var metricsPanel = new Panel(BuildMetricsTable(trackedItems))
                                .Header("System")
                                .Border(BoxBorder.Rounded);
 
-            grid.AddRow(processorPanel, metricsPanel);
+            // RIGHT: processors
+            var processorPanel = new Panel(BuildProcessorTable())
+                                 .Header("Processors")
+                                 .Border(BoxBorder.Rounded);
+
+            grid.AddRow(metricsPanel, processorPanel);
 
             return grid;
         }
@@ -72,7 +72,7 @@ namespace ProtoFact.Console
             var table = new Table()
                         .Border(TableBorder.Simple)
                         .AddColumn("Metric")
-                        .AddColumn("Value", c => c.Width = 20);
+                        .AddColumn("Value", c => c.Width = 24);
 
             // ---- Inventory
             table.AddRow("[yellow]Inventory[/]", "");
@@ -95,6 +95,17 @@ namespace ProtoFact.Console
 
             table.AddEmptyRow();
 
+            // ---- Throughput
+            table.AddRow("[yellow]Throughput[/]", "");
+
+            foreach (var item in items)
+            {
+                var throughput = _controller.GetThroughput(item);
+                table.AddRow(item.Name, $"{throughput:F2}/s");
+            }
+
+            table.AddEmptyRow();
+
             // ---- Process counts
             table.AddRow("[yellow]Processors[/]", "");
 
@@ -103,6 +114,15 @@ namespace ProtoFact.Console
                 var count = _processors.Count(p => p.Recipe.Output.Item.Equals(item));
                 table.AddRow(item.Name, count.ToString());
             }
+
+            table.AddEmptyRow();
+
+            // ---- System metrics
+            var metrics = _controller.GetSystemMetrics();
+
+            table.AddRow("[yellow]System[/]", "");
+            table.AddRow("Utilization", $"{metrics.Utilization:P0}");
+            table.AddRow("Idle", $"{metrics.IdleFraction:P0}");
 
             table.AddEmptyRow();
 

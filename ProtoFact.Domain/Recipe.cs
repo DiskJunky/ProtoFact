@@ -11,7 +11,9 @@ namespace ProtoFact.Domain
     public sealed class Recipe
     {
         public IReadOnlyList<Quantity> Inputs { get; }
+
         public Quantity Output { get; }
+
         public double DurationSeconds { get; }
 
         public Recipe(IEnumerable<Quantity> inputs, Quantity output, double durationSeconds)

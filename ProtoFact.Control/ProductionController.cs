@@ -204,9 +204,9 @@ namespace ProtoFact.Control
             return GetBottleneckInfo()
                    .Where(b => b.Severity > 0)
                    .OrderByDescending(b => b.Severity)
+                   .ThenByDescending(b => b.TotalProcessors)
                    .Take(topN);
         }
-
 
         private bool CanSustainProduction(Recipe recipe)
         {
@@ -273,6 +273,49 @@ namespace ProtoFact.Control
         private IProcessor CreateProcessor(Recipe recipe)
         {
             return new Processor(recipe, _inventory, _logger);
+        }
+
+        public SystemMetrics GetSystemMetrics()
+        {
+            var total = _processors.Count;
+            if (total == 0)
+                return new SystemMetrics(0, 0, 0, 1, 0);
+
+            var running = _processors.Count(p => p.IsRunning);
+
+            var utilization = (double)running / total;
+            var idle = 1.0 - utilization;
+
+            return new SystemMetrics(
+                                     total,
+                                     running,
+                                     utilization,
+                                     idle,
+                                     utilization
+                                    );
+        }
+
+        public double GetThroughput(Item item)
+        {
+            var processors = _processors
+                             .Where(p => p.Recipe.Output.Item.Equals(item))
+                             .ToList();
+
+            if (processors.Count == 0)
+                return 0;
+
+            double total = 0;
+
+            foreach (var p in processors)
+            {
+                if (!p.IsRunning)
+                    continue;
+
+                var ratePerProcessor = p.Recipe.Output.Amount / p.Recipe.DurationSeconds;
+                total += ratePerProcessor;
+            }
+
+            return total;
         }
     }
 }

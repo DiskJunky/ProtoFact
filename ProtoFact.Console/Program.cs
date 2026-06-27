@@ -14,6 +14,24 @@ class Program
 {
     static void Main()
     {
+        try
+        {
+            Initialize();
+        }
+        catch (Exception e)
+        {
+            System.Console.WriteLine("There was a fatal error:");
+            var originalForeColor = System.Console.ForegroundColor;
+            System.Console.ForegroundColor = ConsoleColor.Magenta;
+            System.Console.WriteLine(e);
+
+            // restore or all further text will be magenta
+            System.Console.ForegroundColor = originalForeColor;
+        }
+    }
+
+    private static void Initialize()
+    {
         var kernel = new StandardKernel(new BindingsModule());
 
         var logger = kernel.Get<ILogger>();
@@ -39,7 +57,7 @@ class Program
                                    2.0);
         var recipes = new[]
                       {
-                          recipe, 
+                          recipe,
                           gearRecipe,
                           oreRecipe,
                       };
@@ -48,9 +66,9 @@ class Program
 
         var rateSolver = kernel.Get<IRateSolver>();
         var controller = new ProductionController(rateSolver,
-                                                  adaptiveController, 
-                                                  bufferStrategy, 
-                                                  inventory, 
+                                                  adaptiveController,
+                                                  bufferStrategy,
+                                                  inventory,
                                                   logger);
 
         // Example goal

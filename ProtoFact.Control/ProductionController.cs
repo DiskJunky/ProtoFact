@@ -97,14 +97,27 @@ namespace ProtoFact.Control
             var currentCount = CountProcessors(node.Item);
             var requiredCount = (int)Math.Ceiling(node.MachinesRequired);
 
+            var currentThroughput = GetThroughput(node.Item);
+            var requiredThroughput = node.RequiredRate;
+
+            // small tolerance for float noise
+            var flowSatisfied = currentThroughput >= requiredThroughput * 0.98;
+
+
             var targetBuffer = _bufferStrategy.GetTargetBuffer(node.Item, node.RequiredRate);
 
             var deficit = targetBuffer - currentStock;
+            var deadband = targetBuffer * 0.1; // 10%
+
+            if (Math.Abs(deficit) < deadband)
+            {
+                deficit = 0;
+            }
             var hasDeficit = deficit > 0;
 
-            var baseDelta = requiredCount - currentCount;
             // ✅ HARD FLOOR: never go below required processors
             var minDelta = requiredCount - currentCount;
+            var baseDelta = minDelta;
 
             var cappedStock = Math.Min(currentStock, targetBuffer * 2);
 
@@ -112,6 +125,15 @@ namespace ProtoFact.Control
                 node.Item,
                 cappedStock,
                 targetBuffer);
+
+            // ✅ dampen response
+            adaptiveDelta *= 0.25;   // try 0.2–0.4 range
+
+            // ✅ NEW: stock cannot prevent scale-down once flow is satisfied
+            if (flowSatisfied)
+            {
+                adaptiveDelta = Math.Min(0, adaptiveDelta);
+            }
 
             var adaptive = baseDelta + adaptiveDelta;
 
@@ -124,8 +146,11 @@ namespace ProtoFact.Control
                 if (hasDeficit)
                 {
                     // Allow controlled overscaling to recover buffer
-                    var extraNeeded = (int)Math.Ceiling(deficit / Math.Max(1.0, node.RequiredRate));
-                    var maxAllowed = requiredCount + extraNeeded;
+                    var recoveryTimeSeconds = 3.0; // tuning knob
+
+                    var extraNeeded = (int)Math.Ceiling(
+                                                        deficit / (node.RequiredRate * recoveryTimeSeconds)
+                                                       ); var maxAllowed = requiredCount + extraNeeded;
 
                     var allowedIncrease = maxAllowed - currentCount;
                     adjustment = Math.Min(adjustment, allowedIncrease);
@@ -157,13 +182,29 @@ namespace ProtoFact.Control
                 return;
             }
 
-            _logger.Debug(
-                $"[Adaptive] {node.Item.Name} | " +
-                $"Stock={currentStock:F2} Target={targetBuffer:F2} " +
-                $"Req={requiredCount} Curr={currentCount} MinΔ={minDelta:F2} " +
-                $"BaseΔ={baseDelta:F2} AdaptΔ={adaptiveDelta:F2} FinalΔ={adjustment:F2}"
-            );
+            // ✅ NEW: do not scale down if flow is already insufficient
+            if (adjustment < 0 && !flowSatisfied)
+            {
+                adjustment = 0;
+            }
 
+            _logger.Debug(
+                          $"[Adaptive] {node.Item.Name} | " +
+                          $"Stock={currentStock:F2} Target={targetBuffer:F2} " +
+                          $"Req={requiredCount} Curr={currentCount} MinΔ={minDelta:F2} " +
+                          $"Flow={(flowSatisfied ? "OK" : "LOW")} " +
+                          $"BaseΔ={baseDelta:F2} AdaptΔ={adaptiveDelta:F2} FinalΔ={adjustment:F2}"
+                         );
+
+            // ✅ Quantise adjustment to discrete actuator steps
+            if (Math.Abs(adjustment) < 1)
+            {
+                adjustment = 0;
+            }
+            else
+            {
+                adjustment = (int)Math.Round(adjustment);
+            }
             ApplyAdjustment(node.Item, adjustment, recipe);
         }
 
@@ -250,18 +291,29 @@ namespace ProtoFact.Control
 
         private void RemoveProcessors(Item item, int count)
         {
-            for (int i = _processors.Count - 1; i >= 0 && count > 0; i--)
-            {
-                var p = _processors[i];
+            if (count <= 0)
+                return;
 
-                if (p.Recipe.Output.Item.Equals(item) &&
-                    p.State != ProcessorState.Running)
-                {
-                    _processors.RemoveAt(i);
-                    count--;
-                }
+            // ✅ Only mark RUNNING processors
+            var candidates = _processors
+                             .Where(p => p.Recipe.Output.Item.Equals(item))
+                             .Where(p => p.IsRunning)                      // ✅ CRITICAL
+                             .Where(p => !p.IsMarkedForRemoval)
+                             .Take(count)
+                             .ToList();
+
+            foreach (var p in candidates)
+            {
+                p.IsMarkedForRemoval = true;
             }
+
+            // ✅ Clean up stopped processors
+            _processors.RemoveAll(p =>
+                                      p.Recipe.Output.Item.Equals(item) &&
+                                      p.IsMarkedForRemoval &&
+                                      p.State == ProcessorState.Stopped);
         }
+
 
         public double GetUtilization(Item item)
         {

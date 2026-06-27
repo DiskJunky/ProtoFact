@@ -21,6 +21,8 @@ namespace ProtoFact.Engine
 
         public bool IsRunning => State == ProcessorState.Running;
 
+        public bool IsMarkedForRemoval { get; set; }
+
         public string Name { get; }
 
         public Processor(Recipe recipe, IInventory inventory, ILogger logger)
@@ -38,6 +40,9 @@ namespace ProtoFact.Engine
             if (deltaTime <= 0)
                 return;
 
+            if (State == ProcessorState.Stopped)
+                return;
+
             switch (State)
             {
                 case ProcessorState.Idle:
@@ -46,18 +51,29 @@ namespace ProtoFact.Engine
 
                 case ProcessorState.Running:
                     Run(deltaTime);
+
+                    // ✅ CRITICAL FIX:
+                    // Immediately attempt restart if we just completed
+                    if (State == ProcessorState.Idle)
+                    {
+                        TryStart();
+                    }
+
                     break;
             }
         }
 
-        private void TryStart()
+        private bool TryStart()
         {
             _logger.Trace($"Processor starting recipe: {Recipe}");
             if (_inventory.TryConsume(Recipe.Inputs))
             {
                 Progress = 0;
                 State = ProcessorState.Running;
+                return true;
             }
+
+            return false;
         }
 
         private void Run(double deltaTime)
@@ -77,6 +93,15 @@ namespace ProtoFact.Engine
             _inventory.Add(new[] { Recipe.Output });
 
             Progress = 0;
+
+            // ✅ NEW: if marked for removal, stop instead of going idle
+            if (IsMarkedForRemoval)
+            {
+                State = ProcessorState.Stopped;
+                return;
+            }
+
+            // otherwise continue normal lifecycle
             State = ProcessorState.Idle;
         }
     }

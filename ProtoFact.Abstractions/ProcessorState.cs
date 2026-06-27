@@ -3,6 +3,7 @@
     public enum ProcessorState
     {
         Idle,
-        Running
+        Running,
+        Stopped
     }
 }

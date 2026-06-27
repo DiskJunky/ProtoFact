@@ -13,5 +13,7 @@ namespace ProtoFact.Abstractions
         bool IsRunning { get; }
 
         void Tick(double deltaTime);
+
+        bool IsMarkedForRemoval { get; set; }
     }
 }

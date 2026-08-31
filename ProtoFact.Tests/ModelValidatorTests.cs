@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using ProtoFact.Domain;
 using ProtoFact.Engine;
 using Xunit;
@@ -42,6 +43,40 @@ namespace ProtoFact.Tests
             var result = validator.Validate(recipes);
 
             Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Should_Allow_Raw_Resource_Generator_With_No_Inputs()
+        {
+            var ore = new Item("ore", "Ore", ItemType.Raw);
+
+            var recipes = new List<Recipe>
+                          {
+                              new Recipe(Array.Empty<Quantity>(), new Quantity(ore, 1), 1)
+                          };
+
+            var validator = new ModelValidator();
+
+            var result = validator.Validate(recipes);
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Should_Reject_NonRaw_Recipe_With_No_Inputs()
+        {
+            var plate = new Item("plate", "Plate", ItemType.Intermediate);
+
+            var recipes = new List<Recipe>
+                          {
+                              new Recipe(Array.Empty<Quantity>(), new Quantity(plate, 1), 1)
+                          };
+
+            var validator = new ModelValidator();
+
+            var result = validator.Validate(recipes);
+
+            Assert.False(result.IsValid);
         }
 
         [Theory]

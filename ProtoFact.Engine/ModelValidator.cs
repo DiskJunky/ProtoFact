@@ -32,7 +32,12 @@ namespace ProtoFact.Engine
                 if (recipe.Output == null)
                     result.AddError("Recipe has null output.");
 
-                if (recipe.Inputs == null || !recipe.Inputs.Any())
+                // Raw resources may be produced by "generator" recipes with
+                // no inputs (e.g. mining ore). Any other recipe must consume
+                // at least one input.
+                var isRawGenerator = recipe.Output?.Item.Type == ItemType.Raw;
+
+                if (!isRawGenerator && (recipe.Inputs == null || !recipe.Inputs.Any()))
                     result.AddError($"Recipe '{recipe}' has no inputs.");
             }
         }

@@ -18,6 +18,7 @@ namespace ProtoFact.Infrastructure
             Bind<IAdaptiveController>().To<ProportionalController>().InSingletonScope();
             Bind<IBufferStrategy>().To<TimeWindowBufferStrategy>().InSingletonScope();
             Bind<IModelValidator>().To<ModelValidator>().InSingletonScope();
+            Bind<IProductionTreeBuilder>().To<ProductionTreeBuilder>().InSingletonScope();
 
             // Logging
             Bind<ILogger>().To<NLogLogger>().InSingletonScope();

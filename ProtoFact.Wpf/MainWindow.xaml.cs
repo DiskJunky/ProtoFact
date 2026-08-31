@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private readonly DemoScenario _scenario;
     private readonly IInventory _inventory;
     private readonly IProductionController _controller;
+    private readonly IProductionTreeBuilder _treeBuilder;
     private readonly EngineRunner _engine;
     private readonly DispatcherTimer _timer;
 
@@ -43,6 +44,7 @@ public partial class MainWindow : Window
         var adaptiveController = kernel.Get<IAdaptiveController>();
         var bufferStrategy = kernel.Get<IBufferStrategy>();
         var rateSolver = kernel.Get<IRateSolver>();
+        _treeBuilder = kernel.Get<IProductionTreeBuilder>();
 
         _scenario = DemoScenario.Create();
 
@@ -105,7 +107,6 @@ public partial class MainWindow : Window
     private void RefreshRows()
     {
         var goals = _controller.GetGoals().ToDictionary(g => g.Target);
-
         foreach (var row in _rows)
         {
             row.Stock = _inventory.Get(row.Item);
@@ -118,6 +119,7 @@ public partial class MainWindow : Window
             var target = goal?.TargetRate ?? 0;
             row.TargetRate = target;
             row.Delta = target > 0 ? row.Throughput - target : 0;
+            row.UpdateStatus();
         }
 
         var goalSummary = _scenario.Goals.Any()
@@ -126,14 +128,22 @@ public partial class MainWindow : Window
 
         var bottlenecks = _controller.GetTopBottlenecks(3).ToList();
         var bottleneckSummary = bottlenecks.Any()
-            ? string.Join(", ", bottlenecks.Select(b => $"{b.Item.Name} ({b.Severity:P0})"))
-            : "None";
+            ? string.Join(", ", bottlenecks.Select(b => $"⚠️ {b.Item.Name} ({b.Severity:P0})"))
+            : "✅ None";
 
         var metrics = _controller.GetSystemMetrics();
 
-        GoalsText.Text = $"Goals: {goalSummary}";
+        GoalsText.Text = $"🎯 Goals: {goalSummary}";
         BottlenecksText.Text = $"Bottlenecks: {bottleneckSummary}";
-        SystemText.Text = $"System: Util {metrics.Utilization:P0} | Idle {metrics.IdleFraction:P0}";
+        SystemText.Text = $"📈 System: Util {metrics.Utilization:P0} | Idle {metrics.IdleFraction:P0}";
+
+        RefreshTree();
+    }
+
+    private void RefreshTree()
+    {
+        var trees = _treeBuilder.BuildTrees(_scenario.Goals, _scenario.Recipes, _inventory);
+        RecipeTreeView.ItemsSource = trees;
     }
 
     /// <summary>

@@ -1,8 +1,9 @@
-﻿using ProtoFact.Domain;
+﻿using ProtoFact.Abstractions;
+using ProtoFact.Domain;
 
 namespace ProtoFact.Engine
 {
-    public interface IInventory
+    public interface IInventory : IInventorySnapshot
     {
         bool CanConsume(IEnumerable<Quantity> required);
         bool TryConsume(IEnumerable<Quantity> required);

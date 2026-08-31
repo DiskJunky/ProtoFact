@@ -14,6 +14,9 @@ public sealed class RawResourceViewModel
     public Item Item { get; }
     public string Name => Item.Name;
 
+    /// <summary>Pick glyph - all rows here are raw materials by construction.</summary>
+    public string Glyph => "\u26CF\uFE0F";
+
     public double AmountToAdd { get; set; } = 10;
 
     public RelayCommand AddCommand { get; }

@@ -4,6 +4,38 @@ Prioritized list of next steps identified during the architecture review.
 Items are ordered roughly by priority; check items off / update status as
 work lands.
 
+## 0. Recipe/production tree visualization (done)
+
+**Why**: The console/WPF UIs only showed a flattened, aggregated table (one
+row per item). There was no way to see the full chain from a goal down to
+raw materials, and it wasn't obvious how a tree would handle an item shared
+by multiple branches (e.g. a base resource feeding two different products).
+
+**Approaches considered**: (1) a recursive tree duplicating shared items
+per edge (like `npm ls` / VS's dependency tree), (2) a purely static
+structural tree with no live rates, (3) a true node-link DAG diagram
+(no duplication, but no built-in WPF control and real layout effort), (4) a
+flat table with expandable "feeds into"/"sourced from" columns. Chose (1)
+with both per-edge and aggregate rates shown, since it reuses the existing
+recipe data directly and is the most information-dense without requiring a
+custom graph-layout engine.
+
+**Status**: Done. Added `ProductionTreeNode`/`IProductionTreeBuilder`
+(`ProtoFact.Abstractions`) and `ProductionTreeBuilder`
+(`ProtoFact.Engine`), which builds one duplicated tree per goal: every edge
+gets its own node instance, carrying both `EdgeRate` (demand from this one
+parent) and `AggregateRate` (total demand for that item summed across every
+edge in the whole plan). Items required by more than one edge are flagged
+via `IsShared` and rendered in the WPF "Recipe Tree" tab with a "shared"
+badge plus the aggregate total, so the duplication is clearly explained
+rather than being ambiguous. Covered by
+`ProtoFact.Tests/ProductionTreeBuilderTests.cs`.
+
+**Follow-ups** (not yet done):
+- Surface the same tree in the console app (currently WPF-only).
+- Consider highlighting/linking all occurrences of a shared item on hover
+  (currently they're just independently flagged).
+
 ## 1. Expand recipe model complexity (done)
 
 **Why**: The console demo originally only had 3 items / 3 recipes (ore ->

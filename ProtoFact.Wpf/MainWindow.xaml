@@ -1,0 +1,60 @@
+<Window x:Class="ProtoFact.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ProtoFact" Height="600" Width="900">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <GroupBox Header="System Overview" Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
+            <DataGrid x:Name="OverviewGrid"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Item" Binding="{Binding Name}" />
+                    <DataGridTextColumn Header="Stock" Binding="{Binding Stock, StringFormat={}{0:F1}}" />
+                    <DataGridTextColumn Header="Util" Binding="{Binding Utilization, StringFormat={}{0:P0}}" />
+                    <DataGridTextColumn Header="Thru" Binding="{Binding Throughput, StringFormat={}{0:F2}}" />
+                    <DataGridTextColumn Header="Max" Binding="{Binding MaxThroughput, StringFormat={}{0:F2}}" />
+                    <DataGridTextColumn Header="Target" Binding="{Binding TargetRate, StringFormat={}{0:F2}}" />
+                    <DataGridTextColumn Header="Delta" Binding="{Binding Delta, StringFormat={}{0:F2}}" />
+                    <DataGridTextColumn Header="Proc" Binding="{Binding ProcessorCount}" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+
+        <GroupBox Header="Raw Resources (found more? add it here)" Grid.Row="0" Grid.Column="1">
+            <ItemsControl x:Name="RawResourcesList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="LightGray" BorderThickness="0,0,0,1" Padding="0,6">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <TextBox Text="{Binding AmountToAdd, UpdateSourceTrigger=PropertyChanged}" Width="60" />
+                                    <Button Content="Add" Command="{Binding AddCommand}" Margin="6,0,0,0" Padding="8,2" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </GroupBox>
+
+        <GroupBox Header="Status" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0">
+            <StackPanel>
+                <TextBlock x:Name="GoalsText" />
+                <TextBlock x:Name="BottlenecksText" />
+                <TextBlock x:Name="SystemText" />
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</Window>

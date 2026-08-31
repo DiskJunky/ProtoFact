@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProtoFact.Abstractions\ProtoFact.Abstractions.csproj" />
+    <ProjectReference Include="..\ProtoFact.Control\ProtoFact.Control.csproj" />
+    <ProjectReference Include="..\ProtoFact.Domain\ProtoFact.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

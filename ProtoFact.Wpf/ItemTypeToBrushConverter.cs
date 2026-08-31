@@ -9,6 +9,8 @@ namespace ProtoFact.Wpf;
 /// <summary>
 /// Converts an <see cref="ItemType"/> to a display color, used to tint the
 /// type glyph consistently across the overview grid and recipe tree.
+/// Resolves the brush from the active theme's resource dictionary so it
+/// respects light/dark mode.
 /// </summary>
 public sealed class ItemTypeToBrushConverter : IValueConverter
 {
@@ -17,9 +19,9 @@ public sealed class ItemTypeToBrushConverter : IValueConverter
         return value is ItemType type
             ? type switch
               {
-                  ItemType.Raw => Brushes.SaddleBrown,
-                  ItemType.Intermediate => Brushes.SteelBlue,
-                  ItemType.Final => Brushes.DarkGoldenrod,
+                  ItemType.Raw => ThemeManager.Brush("TypeRawBrush"),
+                  ItemType.Intermediate => ThemeManager.Brush("TypeIntermediateBrush"),
+                  ItemType.Final => ThemeManager.Brush("TypeFinalBrush"),
                   _ => Brushes.Gray,
               }
             : Brushes.Gray;

@@ -2,5 +2,11 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
+    <!--
+        The active theme dictionary (Themes/LightTheme.xaml or
+        Themes/DarkTheme.xaml) is merged in at runtime by ThemeManager
+        (see App.xaml.cs OnStartup), based on the persisted user
+        preference or the Windows system theme.
+    -->
     <Application.Resources />
 </Application>

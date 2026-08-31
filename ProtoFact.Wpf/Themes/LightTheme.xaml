@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Window / panel surfaces -->
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FFF5F6F8" />
+    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="White" />
+    <SolidColorBrush x:Key="AlternatingRowBackgroundBrush" Color="#FFF0F3F7" />
+    <SolidColorBrush x:Key="BorderBrush" Color="#FFB0B8C4" />
+    <SolidColorBrush x:Key="GridLineBrush" Color="#FFE0E4EA" />
+    <SolidColorBrush x:Key="DividerBrush" Color="LightGray" />
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FF1A1A1A" />
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="Gray" />
+
+    <!-- Section header icon accents -->
+    <SolidColorBrush x:Key="OverviewHeaderBrush" Color="#FF1565C0" />
+    <SolidColorBrush x:Key="RawResourcesHeaderBrush" Color="#FF6D4C00" />
+    <SolidColorBrush x:Key="RecipeTreeHeaderBrush" Color="#FF2E7D32" />
+    <SolidColorBrush x:Key="StatusHeaderBrush" Color="#FF444444" />
+
+    <!-- Semantic status colors (throughput vs. target) -->
+    <SolidColorBrush x:Key="StatusOkBrush" Color="SeaGreen" />
+    <SolidColorBrush x:Key="StatusWarnBrush" Color="DarkGoldenrod" />
+    <SolidColorBrush x:Key="StatusBadBrush" Color="Crimson" />
+    <SolidColorBrush x:Key="StatusNoneBrush" Color="Gray" />
+
+    <!-- Semantic item-type colors -->
+    <SolidColorBrush x:Key="TypeRawBrush" Color="SaddleBrown" />
+    <SolidColorBrush x:Key="TypeIntermediateBrush" Color="SteelBlue" />
+    <SolidColorBrush x:Key="TypeFinalBrush" Color="DarkGoldenrod" />
+
+    <!-- Recipe tree -->
+    <SolidColorBrush x:Key="TreeEdgeRateBrush" Color="#FF1565C0" />
+    <SolidColorBrush x:Key="TreeStockBrush" Color="#FF2E7D32" />
+    <SolidColorBrush x:Key="TreeSharedBadgeBackgroundBrush" Color="#FFE0A000" />
+    <SolidColorBrush x:Key="TreeSharedAggregateBrush" Color="DarkOrange" />
+
+    <!-- Buttons -->
+    <SolidColorBrush x:Key="AddButtonBackgroundBrush" Color="#FF4CAF50" />
+    <SolidColorBrush x:Key="AddButtonBorderBrush" Color="#FF3D8B40" />
+    <SolidColorBrush x:Key="AddButtonForegroundBrush" Color="White" />
+
+</ResourceDictionary>

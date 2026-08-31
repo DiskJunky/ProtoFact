@@ -32,10 +32,10 @@ public sealed class ItemRowViewModel : INotifyPropertyChanged
     /// <summary>Color used to tint <see cref="TypeGlyph"/>, matching the recipe tree.</summary>
     public Brush TypeColor => Item.Type switch
     {
-        ItemType.Raw => Brushes.SaddleBrown,
-        ItemType.Intermediate => Brushes.SteelBlue,
-        ItemType.Final => Brushes.DarkGoldenrod,
-        _ => Brushes.Gray,
+        ItemType.Raw => ThemeManager.Brush("TypeRawBrush"),
+        ItemType.Intermediate => ThemeManager.Brush("TypeIntermediateBrush"),
+        ItemType.Final => ThemeManager.Brush("TypeFinalBrush"),
+        _ => ThemeManager.Brush("StatusNoneBrush"),
     };
 
     private double _stock;
@@ -116,26 +116,40 @@ public sealed class ItemRowViewModel : INotifyPropertyChanged
         if (TargetRate <= 0)
         {
             StatusGlyph = "\uE738";       // Remove
-            StatusColor = Brushes.Gray;
+            StatusColor = ThemeManager.Brush("StatusNoneBrush");
         }
         else if (Throughput >= TargetRate * 0.95)
         {
             StatusGlyph = "\uE930";       // Completed (check mark)
-            StatusColor = Brushes.SeaGreen;
+            StatusColor = ThemeManager.Brush("StatusOkBrush");
         }
         else if (Throughput >= TargetRate * 0.7)
         {
             StatusGlyph = "\uE7BA";       // Warning
-            StatusColor = Brushes.DarkGoldenrod;
+            StatusColor = ThemeManager.Brush("StatusWarnBrush");
         }
         else
         {
             StatusGlyph = "\uEB90";       // StatusErrorFull
-            StatusColor = Brushes.Crimson;
+            StatusColor = ThemeManager.Brush("StatusBadBrush");
         }
     }
 
+    /// <summary>
+    /// Re-resolves theme-dependent brush properties after the active theme
+    /// changes, since plain C# properties can't use DynamicResource and
+    /// must be recomputed explicitly.
+    /// </summary>
+    public void RefreshTheme()
+    {
+        OnPropertyChanged(nameof(TypeColor));
+        UpdateStatus();
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged(string propertyName)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     private void SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
@@ -143,6 +157,6 @@ public sealed class ItemRowViewModel : INotifyPropertyChanged
             return;
 
         field = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        OnPropertyChanged(propertyName ?? string.Empty);
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Windows.Media;
 using ProtoFact.Domain;
 using ProtoFact.Engine;
 
@@ -14,8 +15,11 @@ public sealed class RawResourceViewModel
     public Item Item { get; }
     public string Name => Item.Name;
 
-    /// <summary>Pick glyph - all rows here are raw materials by construction.</summary>
-    public string Glyph => "\u26CF\uFE0F";
+    /// <summary>Icon-font glyph - all rows here are raw materials by construction.</summary>
+    public string Glyph => "\uE7B8"; // Package
+
+    /// <summary>Color used to tint <see cref="Glyph"/>, matching the recipe tree.</summary>
+    public Brush GlyphColor => Brushes.SaddleBrown;
 
     public double AmountToAdd { get; set; } = 10;
 

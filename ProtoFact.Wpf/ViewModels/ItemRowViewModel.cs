@@ -15,15 +15,27 @@ public sealed class ItemRowViewModel : INotifyPropertyChanged
     public string Name => Item.Name;
 
     /// <summary>
-    /// Glyph representing the item's type (raw material, intermediate, or
-    /// final product), shown as a prefix in the overview grid.
+    /// Icon-font glyph (Segoe Fluent Icons) representing the item's type
+    /// (raw material, intermediate, or final product), shown as a prefix
+    /// in the overview grid. Uses an icon font rather than color emoji
+    /// because WPF's text stack cannot render color (COLR/CPAL) glyphs -
+    /// it always tints glyphs with the current Foreground.
     /// </summary>
     public string TypeGlyph => Item.Type switch
     {
-        ItemType.Raw => "\u26CF\uFE0F",          // pick (raw material)
-        ItemType.Intermediate => "\u2699\uFE0F", // gear (intermediate)
-        ItemType.Final => "\U0001F3C6",          // trophy (final product)
-        _ => "\u2022",
+        ItemType.Raw => "\uE7B8",          // Package (raw material)
+        ItemType.Intermediate => "\uE713", // Setting/gear (intermediate)
+        ItemType.Final => "\uEB4D",        // Trophy2 (final product)
+        _ => "\uE734",                     // FavoriteStar fallback
+    };
+
+    /// <summary>Color used to tint <see cref="TypeGlyph"/>, matching the recipe tree.</summary>
+    public Brush TypeColor => Item.Type switch
+    {
+        ItemType.Raw => Brushes.SaddleBrown,
+        ItemType.Intermediate => Brushes.SteelBlue,
+        ItemType.Final => Brushes.DarkGoldenrod,
+        _ => Brushes.Gray,
     };
 
     private double _stock;
@@ -75,7 +87,7 @@ public sealed class ItemRowViewModel : INotifyPropertyChanged
         set => SetField(ref _processorCount, value);
     }
 
-    private string _statusGlyph = "\u2796"; // heavy minus sign (no goal)
+    private string _statusGlyph = "\uE738"; // Remove (no goal)
     public string StatusGlyph
     {
         get => _statusGlyph;
@@ -103,22 +115,22 @@ public sealed class ItemRowViewModel : INotifyPropertyChanged
     {
         if (TargetRate <= 0)
         {
-            StatusGlyph = "\u2796";       // heavy minus sign
+            StatusGlyph = "\uE738";       // Remove
             StatusColor = Brushes.Gray;
         }
         else if (Throughput >= TargetRate * 0.95)
         {
-            StatusGlyph = "\u2705";       // check mark
+            StatusGlyph = "\uE930";       // Completed (check mark)
             StatusColor = Brushes.SeaGreen;
         }
         else if (Throughput >= TargetRate * 0.7)
         {
-            StatusGlyph = "\u26A0\uFE0F"; // warning
+            StatusGlyph = "\uE7BA";       // Warning
             StatusColor = Brushes.DarkGoldenrod;
         }
         else
         {
-            StatusGlyph = "\U0001F534";   // red circle
+            StatusGlyph = "\uEB90";       // StatusErrorFull
             StatusColor = Brushes.Crimson;
         }
     }

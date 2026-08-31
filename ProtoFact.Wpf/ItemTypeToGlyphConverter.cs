@@ -6,9 +6,11 @@ using ProtoFact.Domain;
 namespace ProtoFact.Wpf;
 
 /// <summary>
-/// Converts an <see cref="ItemType"/> to a display glyph, used to visually
-/// distinguish raw materials, intermediates, and final products in the
-/// recipe tree.
+/// Converts an <see cref="ItemType"/> to a display glyph (Segoe Fluent
+/// Icons codepoint), used to visually distinguish raw materials,
+/// intermediates, and final products in the recipe tree. An icon font is
+/// used instead of color emoji because WPF cannot render color (COLR/CPAL)
+/// glyphs - it always tints glyphs with the current Foreground brush.
 /// </summary>
 public sealed class ItemTypeToGlyphConverter : IValueConverter
 {
@@ -17,12 +19,12 @@ public sealed class ItemTypeToGlyphConverter : IValueConverter
         return value is ItemType type
             ? type switch
               {
-                  ItemType.Raw => "\u26CF\uFE0F",
-                  ItemType.Intermediate => "\u2699\uFE0F",
-                  ItemType.Final => "\U0001F3C6",
-                  _ => "\u2022",
+                  ItemType.Raw => "\uE7B8",          // Package
+                  ItemType.Intermediate => "\uE713", // Setting/gear
+                  ItemType.Final => "\uEB4D",         // Trophy2
+                  _ => "\uE734",                      // FavoriteStar
               }
-            : "\u2022";
+            : "\uE734";
     }
 
     public object ConvertBack(object? value, Type targetType, object parameter, CultureInfo culture)

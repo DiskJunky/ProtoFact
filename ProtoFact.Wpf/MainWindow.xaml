@@ -7,6 +7,7 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <local:ItemTypeToGlyphConverter x:Key="TypeGlyph" />
+        <local:ItemTypeToBrushConverter x:Key="TypeBrush" />
 
         <Style TargetType="GroupBox">
             <Setter Property="Margin" Value="0,0,0,8" />
@@ -16,6 +17,15 @@
         <Style TargetType="TabItem">
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Padding" Value="10,4" />
+        </Style>
+        <!--
+            WPF's text stack cannot render color (COLR/CPAL) emoji glyphs -
+            it always tints them with the current Foreground, making emoji
+            appear monochrome. Use a vector icon font instead, which is
+            designed to be tinted and renders correctly.
+        -->
+        <Style x:Key="GlyphText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
         </Style>
     </Window.Resources>
     <Grid Margin="10">
@@ -32,7 +42,13 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <GroupBox Header="📊 System Overview" Grid.Column="0" Margin="0,0,10,0">
+                    <GroupBox Grid.Column="0" Margin="0,0,10,0">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="" Style="{StaticResource GlyphText}" Foreground="#FF1565C0" Margin="0,0,4,0" />
+                                <TextBlock Text="System Overview" />
+                            </StackPanel>
+                        </GroupBox.Header>
                         <DataGrid x:Name="OverviewGrid"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
@@ -47,6 +63,8 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding StatusGlyph}" HorizontalAlignment="Center"
+                                                       Style="{StaticResource GlyphText}"
+                                                       Foreground="{Binding StatusColor}"
                                                        ToolTip="Throughput vs. target status" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -55,7 +73,8 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding TypeGlyph}" Margin="0,0,4,0" />
+                                                <TextBlock Text="{Binding TypeGlyph}" Margin="0,0,4,0" Style="{StaticResource GlyphText}"
+                                                           Foreground="{Binding TypeColor}" />
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
                                             </StackPanel>
                                         </DataTemplate>
@@ -79,20 +98,32 @@
                         </DataGrid>
                     </GroupBox>
 
-                    <GroupBox Header="⛏️ Raw Resources (found more? add it here)" Grid.Column="1">
+                    <GroupBox Grid.Column="1">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="" Style="{StaticResource GlyphText}" Foreground="#FF6D4C00" Margin="0,0,4,0" />
+                                <TextBlock Text="Raw Resources (found more? add it here)" />
+                            </StackPanel>
+                        </GroupBox.Header>
                         <ItemsControl x:Name="RawResourcesList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border BorderBrush="LightGray" BorderThickness="0,0,0,1" Padding="0,6">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Glyph}" Margin="0,0,4,0" />
+                                                <TextBlock Text="{Binding Glyph}" Margin="0,0,4,0" Style="{StaticResource GlyphText}"
+                                                           Foreground="{Binding GlyphColor}" />
                                                 <TextBlock Text="{Binding Name}" FontWeight="Bold" />
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                                 <TextBox Text="{Binding AmountToAdd, UpdateSourceTrigger=PropertyChanged}" Width="60" />
-                                                <Button Content="➕ Add" Command="{Binding AddCommand}" Margin="6,0,0,0" Padding="8,2"
-                                                        Background="#FF4CAF50" Foreground="White" BorderBrush="#FF3D8B40" />
+                                                <Button Command="{Binding AddCommand}" Margin="6,0,0,0" Padding="8,2"
+                                                        Background="#FF4CAF50" Foreground="White" BorderBrush="#FF3D8B40">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="" Style="{StaticResource GlyphText}" Margin="0,0,4,0" />
+                                                        <TextBlock Text="Add" />
+                                                    </StackPanel>
+                                                </Button>
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
@@ -103,7 +134,13 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Header="🌳 Recipe Tree">
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="" Style="{StaticResource GlyphText}" Foreground="#FF2E7D32" Margin="0,0,4,0" />
+                        <TextBlock Text="Recipe Tree" />
+                    </StackPanel>
+                </TabItem.Header>
                 <GroupBox Header="Production chain per goal (raw materials at the leaves)">
                     <TreeView x:Name="RecipeTreeView">
                         <TreeView.ItemContainerStyle>
@@ -114,7 +151,8 @@
                         <TreeView.Resources>
                             <HierarchicalDataTemplate DataType="{x:Type abs:ProductionTreeNode}" ItemsSource="{Binding Inputs}">
                                 <StackPanel Orientation="Horizontal" Margin="0,2">
-                                    <TextBlock Text="{Binding Item.Type, Converter={StaticResource TypeGlyph}}" Margin="0,0,4,0" />
+                                    <TextBlock Text="{Binding Item.Type, Converter={StaticResource TypeGlyph}}" Margin="0,0,4,0" Style="{StaticResource GlyphText}"
+                                               Foreground="{Binding Item.Type, Converter={StaticResource TypeBrush}}" />
                                     <TextBlock Text="{Binding Item.Name}" FontWeight="Bold" />
                                     <TextBlock Text=" — edge: " Foreground="Gray" />
                                     <TextBlock Text="{Binding EdgeRate, StringFormat={}{0:F2}/s}" Foreground="#FF1565C0" FontWeight="SemiBold" />
@@ -123,7 +161,10 @@
                                     <StackPanel Orientation="Horizontal" Margin="8,0,0,0"
                                                 Visibility="{Binding IsShared, Converter={StaticResource BoolToVis}}">
                                         <Border Background="#FFE0A000" CornerRadius="3" Padding="4,0" Margin="0,0,4,0">
-                                            <TextBlock Text="🔗 shared" Foreground="White" FontSize="10" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="" Style="{StaticResource GlyphText}" Foreground="White" FontSize="10" Margin="0,0,2,0" />
+                                                <TextBlock Text="shared" Foreground="White" FontSize="10" />
+                                            </StackPanel>
                                         </Border>
                                         <TextBlock Foreground="DarkOrange"
                                                    Text="{Binding AggregateRate, StringFormat={}(shared - total in overview: {0:F2}/s)}" />
@@ -136,7 +177,13 @@
             </TabItem>
         </TabControl>
 
-        <GroupBox Header="🖥️ Status" Grid.Row="1" Margin="0,10,0,0">
+        <GroupBox Grid.Row="1" Margin="0,10,0,0">
+            <GroupBox.Header>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="" Style="{StaticResource GlyphText}" Foreground="#FF444444" Margin="0,0,4,0" />
+                    <TextBlock Text="Status" />
+                </StackPanel>
+            </GroupBox.Header>
             <StackPanel>
                 <TextBlock x:Name="GoalsText" Margin="0,1" />
                 <TextBlock x:Name="BottlenecksText" Margin="0,1" />

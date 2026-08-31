@@ -128,14 +128,14 @@ public partial class MainWindow : Window
 
         var bottlenecks = _controller.GetTopBottlenecks(3).ToList();
         var bottleneckSummary = bottlenecks.Any()
-            ? string.Join(", ", bottlenecks.Select(b => $"⚠️ {b.Item.Name} ({b.Severity:P0})"))
-            : "✅ None";
+            ? string.Join(", ", bottlenecks.Select(b => $"{b.Item.Name} ({b.Severity:P0})"))
+            : "None";
 
         var metrics = _controller.GetSystemMetrics();
 
-        GoalsText.Text = $"🎯 Goals: {goalSummary}";
+        GoalsText.Text = $"Goals: {goalSummary}";
         BottlenecksText.Text = $"Bottlenecks: {bottleneckSummary}";
-        SystemText.Text = $"📈 System: Util {metrics.Utilization:P0} | Idle {metrics.IdleFraction:P0}";
+        SystemText.Text = $"System: Util {metrics.Utilization:P0} | Idle {metrics.IdleFraction:P0}";
 
         RefreshTree();
     }
